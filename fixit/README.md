@@ -34,6 +34,16 @@ To use the real model instead of the mock: put `ANTHROPIC_API_KEY=sk-ant-…` an
 
 `./sample_repo` (a calculator with 2 of 5 tests failing) is bind-mounted into the agent container at `/workspace`; the CLI maps `--repo ./sample_repo` to that path.
 
+To point the agent at a different repository, set `FIXIT_REPO` and re-create the container, then use `--repo /workspace`:
+
+```sh
+FIXIT_REPO=/path/to/your/repo docker compose up -d agent
+uv run fixit run "make the failing tests pass" --repo /workspace
+docker compose up -d agent          # back to ./sample_repo
+```
+
+Note that the default `MockLLM` is scripted for the sample repo only: it always rewrites `calculator.py` with known-good content. Fixing real code needs `FIXIT_LLM=anthropic` and an API key in `.env`.
+
 ```sh
 $ uv run fixit health
 {'status': 'ok', 'llm': 'mock', 'fault': 'none', 'version': '0.1.0'}

@@ -26,7 +26,9 @@ services:
       FIXIT_DEMO_CARDINALITY: ${FIXIT_DEMO_CARDINALITY:-0}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     volumes:
-      - ./sample_repo:/workspace
+      # The repo the agent works on. Override with FIXIT_REPO=/path/to/your/repo
+      # in .env or on the command line, then `docker compose up -d agent`.
+      - ${FIXIT_REPO:-./sample_repo}:/workspace
     ports:
       - "8000:8000"
     logging:
