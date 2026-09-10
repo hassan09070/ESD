@@ -11,6 +11,7 @@ from __future__ import annotations
 import time
 from dataclasses import asdict, dataclass, field
 
+from agent import metrics
 from agent.llm import LLM, LLMError, LLMResponse, complete_with_retry, cost_usd
 from agent.sandbox import Sandbox
 from agent.tools import TOOL_SCHEMAS, Toolbox
@@ -63,6 +64,8 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
     error = error_type = None
     tests_passed = False
 
+    metrics.TASKS_IN_PROGRESS.inc()
+    metrics.record_demo_request(run_id)  # Part E.2 only; no-op label-wise unless enabled
     sandbox = Sandbox(run_id, repo_path)
     try:
         sandbox.create()
@@ -84,6 +87,7 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
             results = []
             for call in resp.tool_calls:
                 text, status = tools.dispatch(call.name, call.input)
+                metrics.TOOL_CALLS.labels(tool=call.name, status=status).inc()
                 if call.name == "run_tests":
                     tests_passed = tools.last_test_result is not None and tools.last_test_result.result == "passed"
                 results.append({"type": "tool_result", "tool_use_id": call.id, "content": text, "is_error": status == "error"})
@@ -100,8 +104,12 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
         summary = f"internal error: {type(e).__name__}: {e}"
     finally:
         sandbox.cleanup()
+        metrics.TASKS_IN_PROGRESS.dec()
 
     duration = time.perf_counter() - start
+    metrics.TASKS_TOTAL.labels(outcome=outcome).inc()
+    metrics.TASK_DURATION.labels(outcome=outcome).observe(duration)
+    metrics.TASK_ITERATIONS.labels(outcome=outcome).observe(iterations)
     return TaskResult(
         run_id=run_id,
         outcome=outcome,

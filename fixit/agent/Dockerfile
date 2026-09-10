@@ -3,6 +3,8 @@
 # because the sandbox runs the target repo's tests inside this container.
 FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
+# Do not emit the *_created companion gauges: they double the series count for no value.
+ENV PROMETHEUS_DISABLE_CREATED_SERIES=True
 WORKDIR /app
 COPY pyproject.toml ./
 COPY agent ./agent

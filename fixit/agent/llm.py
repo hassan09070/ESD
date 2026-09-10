@@ -13,6 +13,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from agent import metrics
+
 MODEL = "claude-sonnet-4-6"
 
 # USD per million tokens. MockLLM uses the same table so cost metrics are non-zero.
@@ -201,14 +203,30 @@ BACKOFF_BASE_S = 0.5
 
 
 def complete_with_retry(llm: LLM, messages: list[dict], tools: list[dict]) -> LLMResponse:
-    """Call the LLM; on LLMError retry up to MAX_ATTEMPTS with exponential backoff."""
+    """Call the LLM; on LLMError retry up to MAX_ATTEMPTS with exponential backoff.
+
+    Metrics recorded here (every attempt): fixit_llm_requests_total{status=ok|error|retry},
+    fixit_llm_request_duration_seconds, fixit_llm_tokens_total, fixit_llm_cost_usd_total.
+    """
+    provider = llm.provider
     for attempt in range(1, MAX_ATTEMPTS + 1):
+        start = time.perf_counter()
         try:
-            return llm.complete(messages, tools)
+            resp = llm.complete(messages, tools)
         except LLMError:
+            metrics.LLM_DURATION.labels(provider=provider).observe(time.perf_counter() - start)
+            metrics.LLM_REQUESTS.labels(provider=provider, status="error").inc()
             if attempt == MAX_ATTEMPTS:
                 raise
+            metrics.LLM_REQUESTS.labels(provider=provider, status="retry").inc()
             time.sleep(BACKOFF_BASE_S * 2 ** (attempt - 1))
+            continue
+        metrics.LLM_DURATION.labels(provider=provider).observe(time.perf_counter() - start)
+        metrics.LLM_REQUESTS.labels(provider=provider, status="ok").inc()
+        metrics.LLM_TOKENS.labels(direction="input").inc(resp.input_tokens)
+        metrics.LLM_TOKENS.labels(direction="output").inc(resp.output_tokens)
+        metrics.LLM_COST.labels(provider=provider).inc(cost_usd(llm.model, resp.input_tokens, resp.output_tokens))
+        return resp
     raise AssertionError("unreachable")
 
 

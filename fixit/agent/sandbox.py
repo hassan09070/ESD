@@ -16,6 +16,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from agent import metrics
+
 TEST_TIMEOUT_S = 30
 IGNORE = shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache", "*.pyc", ".venv", "node_modules")
 _IGNORED_PARTS = {".git", "__pycache__", ".pytest_cache", ".venv", "node_modules"}
@@ -68,11 +70,13 @@ class Sandbox:
                 env=env,
             )
         except subprocess.TimeoutExpired:
+            metrics.SANDBOX_TEST_RUNS.labels(result="timeout").inc()
             return TestRunResult("timeout", f"TIMEOUT: tests exceeded {timeout_s:.0f}s", 0, 0, time.perf_counter() - start)
         output = (proc.stdout or "") + (proc.stderr or "")
         passed = _count(r"(\d+) passed", output)
         failed = _count(r"(\d+) failed", output) + _count(r"(\d+) error", output)
         result = "passed" if proc.returncode == 0 else "failed"
+        metrics.SANDBOX_TEST_RUNS.labels(result=result).inc()
         return TestRunResult(result, output, passed, failed, time.perf_counter() - start)
 
     def _files(self) -> list[Path]:

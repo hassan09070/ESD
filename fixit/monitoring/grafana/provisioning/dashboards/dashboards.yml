@@ -1,0 +1,13 @@
+# Grafana dashboard provisioning: every *.json under /var/lib/grafana/dashboards (bind-mounted
+# from monitoring/grafana/dashboards) is loaded at startup and re-read every 30 s.
+apiVersion: 1
+providers:
+  - name: fixit
+    folder: fixit
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

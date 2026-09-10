@@ -1,4 +1,11 @@
-# fixit stack. Phase 1: agent only (monitoring services are added in later phases).
+# fixit stack: agent + metrics (Prometheus, Grafana, Node Exporter).
+# Log stack (Elasticsearch, Kibana, Filebeat, setup) is added in Phase 3.
+#
+# Named volumes hold state that must survive `docker compose down` (but not `down -v`):
+#   prom_data     Prometheus TSDB (7d retention)
+#   grafana_data  Grafana users/prefs (dashboards themselves are provisioned from files)
+# ./sample_repo is bind-mounted into the agent at /workspace: the CLI's --repo ./sample_repo
+# is resolved to that path inside the container.
 services:
   agent:
     build:
@@ -22,3 +29,58 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: fixit-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - agent
+      - node-exporter
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: fixit-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # Node Exporter measures the kernel it runs on. On Docker Desktop (macOS/Windows) that is
+  # the Docker Linux VM, and the host root cannot be bind-mounted with rslave, so the default
+  # config mounts nothing. On a real Linux host add the host mounts with:
+  #   docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: fixit-node-exporter
+    pid: host
+    uts: host        # report the real kernel hostname in node_uname_info{nodename}
+    command:
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+      # default list minus "overlay" so the container's / (backed by the VM disk) is reported
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$$
+    ports:
+      - "9100:9100"
+
+volumes:
+  prom_data:
+  grafana_data:
