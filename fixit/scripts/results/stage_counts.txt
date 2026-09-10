@@ -1,0 +1,144 @@
+=== stage slow_baseline 2026-09-10T05:53:06Z -> 2026-09-10T05:55:06Z (window 120s) ===
+Prometheus (instant query at window end):
+  LLM p50 (s)                  0.175
+  LLM p95 (s)                  0.242
+  LLM p99 (s)                  0.248
+  LLM mean (s)                 0.201
+  LLM error ratio              0.000
+  LLM retries (count)          0.000
+  LLM calls (count)            308.439
+  task p95 (s)                 1.950
+  task mean (s)                1.902
+  iterations mean              5.000
+  tasks success                61.497
+  tasks error                  0.000
+  HTTP p95 POST /tasks (s)     2.425
+  HTTP 5xx (count)             0.000
+  cost USD/h                   69.399
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"llm_call" and duration_ms > 3000          0
+  event:"llm_retry"                                0
+  level:"error"                                    0
+  event:"task_finished" and outcome:"success"      61
+  event:"task_finished" and outcome:"error"        0
+  event:"http_request" and status_code >= 500      0
+=== stage slow_fault 2026-09-10T05:55:18Z -> 2026-09-10T05:57:47Z (window 149s) ===
+Prometheus (instant query at window end):
+  LLM p50 (s)                  0.194
+  LLM p95 (s)                  4.375
+  LLM p99 (s)                  4.875
+  LLM mean (s)                 0.790
+  LLM error ratio              0.000
+  LLM retries (count)          0.000
+  LLM calls (count)            148.983
+  task p95 (s)                 4.956
+  task mean (s)                4.917
+  iterations mean              5.000
+  tasks success                28.660
+  tasks error                  0.000
+  HTTP p95 POST /tasks (s)     4.963
+  HTTP 5xx (count)             0.000
+  cost USD/h                   26.997
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"llm_call" and duration_ms > 3000          30
+  event:"llm_retry"                                0
+  level:"error"                                    0
+  event:"task_finished" and outcome:"success"      30
+  event:"task_finished" and outcome:"error"        0
+  event:"http_request" and status_code >= 500      0
+=== stage slow_recovery 2026-09-10T05:57:59Z -> 2026-09-10T06:00:00Z (window 121s) ===
+Prometheus (instant query at window end):
+  LLM p50 (s)                  0.175
+  LLM p95 (s)                  0.242
+  LLM p99 (s)                  0.248
+  LLM mean (s)                 0.202
+  LLM error ratio              0.000
+  LLM retries (count)          0.000
+  LLM calls (count)            308.715
+  task p95 (s)                 2.052
+  task mean (s)                1.922
+  iterations mean              5.000
+  tasks success                60.916
+  tasks error                  0.000
+  HTTP p95 POST /tasks (s)     2.450
+  HTTP 5xx (count)             0.000
+  cost USD/h                   68.887
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"llm_call" and duration_ms > 3000          0
+  event:"llm_retry"                                0
+  level:"error"                                    0
+  event:"task_finished" and outcome:"success"      62
+  event:"task_finished" and outcome:"error"        0
+  event:"http_request" and status_code >= 500      0
+=== stage flaky_baseline 2026-09-10T06:00:11Z -> 2026-09-10T06:06:21Z (window 370s) ===
+Prometheus (instant query at window end):
+  LLM p50 (s)                  0.175
+  LLM p95 (s)                  0.243
+  LLM p99 (s)                  0.249
+  LLM mean (s)                 0.202
+  LLM error ratio              0.000
+  LLM retries (count)          0.000
+  LLM calls (count)            311.948
+  task p95 (s)                 1.982
+  task mean (s)                1.894
+  iterations mean              5.000
+  tasks success                62.189
+  tasks error                  0.000
+  HTTP p95 POST /tasks (s)     2.425
+  HTTP 5xx (count)             0.000
+  cost USD/h                   22.764
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"llm_call" and duration_ms > 3000          0
+  event:"llm_retry"                                0
+  level:"error"                                    0
+  event:"task_finished" and outcome:"success"      63
+  event:"task_finished" and outcome:"error"        0
+  event:"http_request" and status_code >= 500      0
+=== stage flaky_fault 2026-09-10T06:06:33Z -> 2026-09-10T06:12:10Z (window 337s) ===
+Prometheus (instant query at window end):
+  LLM p50 (s)                  0.156
+  LLM p95 (s)                  0.241
+  LLM p99 (s)                  0.248
+  LLM mean (s)                 0.162
+  LLM error ratio              0.164
+  LLM retries (count)          55.779
+  LLM calls (count)            229.434
+  task p95 (s)                 4.850
+  task mean (s)                2.517
+  iterations mean              5.000
+  tasks success                44.417
+  tasks error                  0.000
+  HTTP p95 POST /tasks (s)     4.552
+  HTTP 5xx (count)             0.000
+  cost USD/h                   18.382
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"llm_call" and duration_ms > 3000          0
+  event:"llm_retry"                                58
+  level:"error"                                    58
+  event:"task_finished" and outcome:"success"      47
+  event:"task_finished" and outcome:"error"        0
+  event:"http_request" and status_code >= 500      0
+=== stage flaky_recovery 2026-09-10T06:12:22Z -> 2026-09-10T06:14:22Z (window 120s) ===
+Prometheus (instant query at window end):
+  LLM p50 (s)                  0.175
+  LLM p95 (s)                  0.242
+  LLM p99 (s)                  0.248
+  LLM mean (s)                 0.202
+  LLM error ratio              0.000
+  LLM retries (count)          0.000
+  LLM calls (count)            297.432
+  task p95 (s)                 3.839
+  task mean (s)                1.972
+  iterations mean              5.000
+  tasks success                59.285
+  tasks error                  0.000
+  HTTP p95 POST /tasks (s)     2.450
+  HTTP 5xx (count)             0.000
+  cost USD/h                   66.922
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"llm_call" and duration_ms > 3000          0
+  event:"llm_retry"                                0
+  level:"error"                                    0
+  event:"task_finished" and outcome:"success"      60
+  event:"task_finished" and outcome:"error"        0
+  event:"http_request" and status_code >= 500      0

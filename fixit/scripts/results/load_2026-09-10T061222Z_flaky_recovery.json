@@ -1,0 +1,617 @@
+{
+ "start": "2026-09-10T06:12:22Z",
+ "end": "2026-09-10T06:14:22Z",
+ "label": "flaky_recovery",
+ "args": {
+  "tasks": 30,
+  "concurrency": 1,
+  "min_duration": 120.0,
+  "url": "http://localhost:8000",
+  "task": "make the failing tests pass",
+  "reset": true,
+  "json": true,
+  "label": "flaky_recovery"
+ },
+ "rows": [
+  {
+   "i": 1,
+   "request_id": "4c3f1add562c",
+   "http_status": 200,
+   "duration_s": 1.985,
+   "run_id": "be872fec594d",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 2,
+   "request_id": "139e2c694f45",
+   "http_status": 200,
+   "duration_s": 1.867,
+   "run_id": "57841814cf38",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 3,
+   "request_id": "59fb4dcb777d",
+   "http_status": 200,
+   "duration_s": 1.886,
+   "run_id": "d70f907f0aee",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 4,
+   "request_id": "5ee7c79a55bc",
+   "http_status": 200,
+   "duration_s": 1.9,
+   "run_id": "9e48f70dd5dd",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 5,
+   "request_id": "6ee4859f9b98",
+   "http_status": 200,
+   "duration_s": 1.897,
+   "run_id": "132d5ee836c9",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 6,
+   "request_id": "c8c4839400b2",
+   "http_status": 200,
+   "duration_s": 1.889,
+   "run_id": "0c2bd463ca59",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 7,
+   "request_id": "e5a86050ec61",
+   "http_status": 200,
+   "duration_s": 1.891,
+   "run_id": "cb66e478538d",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 8,
+   "request_id": "fcff0ea93747",
+   "http_status": 200,
+   "duration_s": 1.893,
+   "run_id": "e049ea2f8484",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 9,
+   "request_id": "498e65e6aa42",
+   "http_status": 200,
+   "duration_s": 1.902,
+   "run_id": "bb158de85a92",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 10,
+   "request_id": "4b32deb42e52",
+   "http_status": 200,
+   "duration_s": 1.92,
+   "run_id": "e7c42c4e1e04",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 11,
+   "request_id": "ad3e20c3062e",
+   "http_status": 200,
+   "duration_s": 1.883,
+   "run_id": "22845f2a15fc",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 12,
+   "request_id": "748f8d5d2dd5",
+   "http_status": 200,
+   "duration_s": 1.897,
+   "run_id": "5519e33fc16a",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 13,
+   "request_id": "0481e8cabe5b",
+   "http_status": 200,
+   "duration_s": 1.853,
+   "run_id": "db18ecc63e9b",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 14,
+   "request_id": "960df0d0c417",
+   "http_status": 200,
+   "duration_s": 1.904,
+   "run_id": "23a46cabb933",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 15,
+   "request_id": "5ef7e0e8aef1",
+   "http_status": 200,
+   "duration_s": 1.882,
+   "run_id": "ec555355c6c2",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 16,
+   "request_id": "1aceaa588b9b",
+   "http_status": 200,
+   "duration_s": 1.9,
+   "run_id": "e7e654ce356b",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 17,
+   "request_id": "6b0d4b98a2d1",
+   "http_status": 200,
+   "duration_s": 1.873,
+   "run_id": "d73966f31943",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 18,
+   "request_id": "b0674b209732",
+   "http_status": 200,
+   "duration_s": 1.87,
+   "run_id": "eaadf06a00ae",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 19,
+   "request_id": "c5d4f024e8d1",
+   "http_status": 200,
+   "duration_s": 1.84,
+   "run_id": "eae9cd7966f6",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 20,
+   "request_id": "b1b43ffb670c",
+   "http_status": 200,
+   "duration_s": 1.89,
+   "run_id": "ee96f7af9528",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 21,
+   "request_id": "ff856be73cdc",
+   "http_status": 200,
+   "duration_s": 1.915,
+   "run_id": "085989a978e8",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 22,
+   "request_id": "9b7b7ce0e038",
+   "http_status": 200,
+   "duration_s": 1.881,
+   "run_id": "4e86caa5f6cc",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 23,
+   "request_id": "a2593ccd1c94",
+   "http_status": 200,
+   "duration_s": 1.871,
+   "run_id": "4639474b4d84",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 24,
+   "request_id": "b81c198056e9",
+   "http_status": 200,
+   "duration_s": 1.88,
+   "run_id": "75c36e8444a0",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 25,
+   "request_id": "0f41ea35d418",
+   "http_status": 200,
+   "duration_s": 1.88,
+   "run_id": "5d6267707a62",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 26,
+   "request_id": "c8ab67229d39",
+   "http_status": 200,
+   "duration_s": 1.867,
+   "run_id": "0fbae850ec33",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 27,
+   "request_id": "accb25dfb910",
+   "http_status": 200,
+   "duration_s": 1.867,
+   "run_id": "8946940e7504",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 28,
+   "request_id": "6d45b99379b6",
+   "http_status": 200,
+   "duration_s": 1.87,
+   "run_id": "6f162b4bcec0",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 29,
+   "request_id": "9f125786a985",
+   "http_status": 200,
+   "duration_s": 1.891,
+   "run_id": "c6d2099da6d6",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 30,
+   "request_id": "e7929eca4d05",
+   "http_status": 200,
+   "duration_s": 1.981,
+   "run_id": "3186b20d3dfa",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 31,
+   "request_id": "00a65cb59569",
+   "http_status": 200,
+   "duration_s": 1.9,
+   "run_id": "18fd372a2fb5",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 32,
+   "request_id": "1b2d9f702c86",
+   "http_status": 200,
+   "duration_s": 1.9,
+   "run_id": "74e75e1ba781",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 33,
+   "request_id": "b884ac46f402",
+   "http_status": 200,
+   "duration_s": 1.882,
+   "run_id": "3117caa2c443",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 34,
+   "request_id": "0178770372f2",
+   "http_status": 200,
+   "duration_s": 1.889,
+   "run_id": "04e75365171c",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 35,
+   "request_id": "777954aea532",
+   "http_status": 200,
+   "duration_s": 1.864,
+   "run_id": "3f868c316aa8",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 36,
+   "request_id": "854e347c054f",
+   "http_status": 200,
+   "duration_s": 1.871,
+   "run_id": "c276c2a26873",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 37,
+   "request_id": "3b66ef8d47e7",
+   "http_status": 200,
+   "duration_s": 1.869,
+   "run_id": "3b1ff0a5ae37",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 38,
+   "request_id": "5f7f6bd55494",
+   "http_status": 200,
+   "duration_s": 1.86,
+   "run_id": "e44b58b2abc7",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 39,
+   "request_id": "1576e0ea6a05",
+   "http_status": 200,
+   "duration_s": 1.88,
+   "run_id": "efa5152a5ccb",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 40,
+   "request_id": "89395e01bb31",
+   "http_status": 200,
+   "duration_s": 1.903,
+   "run_id": "d85f263b194d",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 41,
+   "request_id": "64a02e8be855",
+   "http_status": 200,
+   "duration_s": 1.932,
+   "run_id": "d9f730afdf7d",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 42,
+   "request_id": "5e2321b3a336",
+   "http_status": 200,
+   "duration_s": 1.894,
+   "run_id": "31015b963dff",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 43,
+   "request_id": "9dc3fee52573",
+   "http_status": 200,
+   "duration_s": 1.991,
+   "run_id": "d61531d9282c",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 44,
+   "request_id": "b7160ca51523",
+   "http_status": 200,
+   "duration_s": 1.876,
+   "run_id": "0baa0869b266",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 45,
+   "request_id": "e8d70ee18d0f",
+   "http_status": 200,
+   "duration_s": 1.879,
+   "run_id": "c532c86ba4f8",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 46,
+   "request_id": "e87f8a8f9abf",
+   "http_status": 200,
+   "duration_s": 1.882,
+   "run_id": "5377ce84e04d",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 47,
+   "request_id": "8982bbdef773",
+   "http_status": 200,
+   "duration_s": 5.651,
+   "run_id": "e16790414027",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 48,
+   "request_id": "569c1ca95f84",
+   "http_status": 200,
+   "duration_s": 2.111,
+   "run_id": "6d3a0d69d143",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 49,
+   "request_id": "c7c7d25cf6b0",
+   "http_status": 200,
+   "duration_s": 2.005,
+   "run_id": "afbcb5ecb5dd",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 50,
+   "request_id": "83ff2e0f2280",
+   "http_status": 200,
+   "duration_s": 2.284,
+   "run_id": "249775ffe56f",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 51,
+   "request_id": "3f70911eadd7",
+   "http_status": 200,
+   "duration_s": 1.925,
+   "run_id": "9841be5759e9",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 52,
+   "request_id": "4592fdf1016d",
+   "http_status": 200,
+   "duration_s": 2.001,
+   "run_id": "8e4b82ab6d48",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 53,
+   "request_id": "dd961957fce1",
+   "http_status": 200,
+   "duration_s": 2.023,
+   "run_id": "394536b5fa17",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 54,
+   "request_id": "4bfd383d4145",
+   "http_status": 200,
+   "duration_s": 2.02,
+   "run_id": "aa193489d552",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 55,
+   "request_id": "30d901d13d6a",
+   "http_status": 200,
+   "duration_s": 2.066,
+   "run_id": "8c4a96da8812",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 56,
+   "request_id": "9727693114d3",
+   "http_status": 200,
+   "duration_s": 1.925,
+   "run_id": "e2bfd5d11dc9",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 57,
+   "request_id": "e82451d95e8b",
+   "http_status": 200,
+   "duration_s": 1.922,
+   "run_id": "eaffb064dea8",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 58,
+   "request_id": "45b87f6c6b84",
+   "http_status": 200,
+   "duration_s": 1.92,
+   "run_id": "fe73a0e6bcda",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 59,
+   "request_id": "ff9fc53e4136",
+   "http_status": 200,
+   "duration_s": 1.901,
+   "run_id": "24615f12c0dd",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 60,
+   "request_id": "325b0b1d1bb6",
+   "http_status": 200,
+   "duration_s": 1.912,
+   "run_id": "1e6c6467aa1f",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  }
+ ]
+}

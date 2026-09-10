@@ -1,0 +1,487 @@
+{
+ "start": "2026-09-10T06:06:33Z",
+ "end": "2026-09-10T06:12:10Z",
+ "label": "flaky_fault",
+ "args": {
+  "tasks": 30,
+  "concurrency": 1,
+  "min_duration": 120.0,
+  "url": "http://localhost:8000",
+  "task": "make the failing tests pass",
+  "reset": true,
+  "json": true,
+  "label": "flaky_fault"
+ },
+ "rows": [
+  {
+   "i": 1,
+   "request_id": "8889016b222a",
+   "http_status": 200,
+   "duration_s": 2.966,
+   "run_id": "66d100554ba4",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 2,
+   "request_id": "9d1af4b70e8a",
+   "http_status": 200,
+   "duration_s": 2.394,
+   "run_id": "57ff05cfeb40",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 3,
+   "request_id": "dfc4e64bc944",
+   "http_status": 200,
+   "duration_s": 2.393,
+   "run_id": "3cbb5a34b5b6",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 4,
+   "request_id": "243c59bc724f",
+   "http_status": 200,
+   "duration_s": 2.413,
+   "run_id": "9f2bdd478b11",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 5,
+   "request_id": "39825f682714",
+   "http_status": 200,
+   "duration_s": 2.878,
+   "run_id": "80570fa6ec8a",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 6,
+   "request_id": "a6f0fde62e88",
+   "http_status": 200,
+   "duration_s": 2.372,
+   "run_id": "026572b440d3",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 7,
+   "request_id": "eec2e9c16b89",
+   "http_status": 200,
+   "duration_s": 2.401,
+   "run_id": "6abae1200e22",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 8,
+   "request_id": "5331fa336313",
+   "http_status": 200,
+   "duration_s": 2.396,
+   "run_id": "f9d78d78fccb",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 9,
+   "request_id": "e263c679b13b",
+   "http_status": 200,
+   "duration_s": 2.892,
+   "run_id": "bfb439d46c88",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 10,
+   "request_id": "9141cd3ce260",
+   "http_status": 200,
+   "duration_s": 2.363,
+   "run_id": "c3e3c97b08bf",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 11,
+   "request_id": "249f23f6ae2d",
+   "http_status": 200,
+   "duration_s": 2.382,
+   "run_id": "d9d75f50363c",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 12,
+   "request_id": "3d20d0ae6ea4",
+   "http_status": 200,
+   "duration_s": 2.385,
+   "run_id": "fda9879ed6c2",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 13,
+   "request_id": "43c565acc390",
+   "http_status": 200,
+   "duration_s": 2.898,
+   "run_id": "a16929117e43",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 14,
+   "request_id": "017ef01afa03",
+   "http_status": 200,
+   "duration_s": 2.389,
+   "run_id": "b85e0fd306fb",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 15,
+   "request_id": "a1944e0087d7",
+   "http_status": 200,
+   "duration_s": 2.381,
+   "run_id": "dc97c28640cd",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 16,
+   "request_id": "2833932ae3a4",
+   "http_status": 200,
+   "duration_s": 2.391,
+   "run_id": "151dad1b4019",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 17,
+   "request_id": "00983d12f449",
+   "http_status": 200,
+   "duration_s": 2.889,
+   "run_id": "af635510be60",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 18,
+   "request_id": "39da827f40c1",
+   "http_status": 200,
+   "duration_s": 2.413,
+   "run_id": "775335a60046",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 19,
+   "request_id": "ee3980cb7641",
+   "http_status": 200,
+   "duration_s": 2.401,
+   "run_id": "b35bb3035ea5",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 20,
+   "request_id": "69ba98b9e335",
+   "http_status": 200,
+   "duration_s": 2.549,
+   "run_id": "0452774b5279",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 21,
+   "request_id": "ac8352e2cb18",
+   "http_status": 200,
+   "duration_s": 2.894,
+   "run_id": "bc5d705f1205",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 22,
+   "request_id": "ea70670504b0",
+   "http_status": 200,
+   "duration_s": 2.4,
+   "run_id": "84f4298def6a",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 23,
+   "request_id": "7fb337320313",
+   "http_status": 200,
+   "duration_s": 2.386,
+   "run_id": "eddb2ebd1ddc",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 24,
+   "request_id": "17137fab6977",
+   "http_status": 200,
+   "duration_s": 2.459,
+   "run_id": "5e0d2b909f7b",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 25,
+   "request_id": "241ee6735930",
+   "http_status": 200,
+   "duration_s": 2.855,
+   "run_id": "c67e31568fae",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 26,
+   "request_id": "fc9aa24d0dea",
+   "http_status": 200,
+   "duration_s": 2.388,
+   "run_id": "bea04ce987f2",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 27,
+   "request_id": "16921ff056f0",
+   "http_status": 200,
+   "duration_s": 2.375,
+   "run_id": "2aa5e0b8b2a8",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 28,
+   "request_id": "c36689cc5dd1",
+   "http_status": 200,
+   "duration_s": 2.423,
+   "run_id": "d495221ad9b2",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 29,
+   "request_id": "ba57f3a6e721",
+   "http_status": 200,
+   "duration_s": 2.904,
+   "run_id": "6ad65eae2695",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 30,
+   "request_id": "99611f3b369f",
+   "http_status": 200,
+   "duration_s": 2.42,
+   "run_id": "a69dad89a470",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 31,
+   "request_id": "d28f2cee8df0",
+   "http_status": 200,
+   "duration_s": 2.409,
+   "run_id": "42124233a677",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 32,
+   "request_id": "1cfdef836392",
+   "http_status": 200,
+   "duration_s": 2.354,
+   "run_id": "cdb6ccf44bb9",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 33,
+   "request_id": "efb1702b3252",
+   "http_status": 200,
+   "duration_s": 2.902,
+   "run_id": "3b6975b8bb91",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 34,
+   "request_id": "7b9e4b5a75b1",
+   "http_status": 200,
+   "duration_s": 2.402,
+   "run_id": "e8b23d100166",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 35,
+   "request_id": "19d4ae8cfa97",
+   "http_status": 200,
+   "duration_s": 2.392,
+   "run_id": "37d26e6535aa",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 36,
+   "request_id": "0df2e2184e26",
+   "http_status": 200,
+   "duration_s": 2.39,
+   "run_id": "d7fd12aba464",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 37,
+   "request_id": "8032e0ac50a4",
+   "http_status": 200,
+   "duration_s": 2.886,
+   "run_id": "676163d09fb5",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 38,
+   "request_id": "371fe01e1829",
+   "http_status": 200,
+   "duration_s": 2.378,
+   "run_id": "11c4091ad12f",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 39,
+   "request_id": "e080ed46a716",
+   "http_status": 200,
+   "duration_s": 2.389,
+   "run_id": "fccef7d02db5",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 40,
+   "request_id": "774c29a10f88",
+   "http_status": 200,
+   "duration_s": 2.383,
+   "run_id": "f879802c2100",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 41,
+   "request_id": "3a8f623cf426",
+   "http_status": 200,
+   "duration_s": 2.908,
+   "run_id": "d4401f82a959",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 42,
+   "request_id": "ece57f3f67c6",
+   "http_status": 200,
+   "duration_s": 2.363,
+   "run_id": "d9470e843923",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 43,
+   "request_id": "a1f4a543e578",
+   "http_status": 200,
+   "duration_s": 2.386,
+   "run_id": "c292d7641e2b",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 44,
+   "request_id": "195a3a941a8c",
+   "http_status": 200,
+   "duration_s": 2.407,
+   "run_id": "73739158ce08",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 45,
+   "request_id": "69bbd0288e78",
+   "http_status": 200,
+   "duration_s": 2.893,
+   "run_id": "f003303070ff",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 46,
+   "request_id": "52ef5e054b76",
+   "http_status": 200,
+   "duration_s": 2.397,
+   "run_id": "59b22fc7b491",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  },
+  {
+   "i": 47,
+   "request_id": "9c078f9884c9",
+   "http_status": 200,
+   "duration_s": 2.381,
+   "run_id": "ab6846eaff10",
+   "outcome": "success",
+   "iterations": 5,
+   "cost_usd": 0.0375
+  }
+ ]
+}
