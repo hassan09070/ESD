@@ -1,0 +1,24 @@
+# fixit stack. Phase 1: agent only (monitoring services are added in later phases).
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    container_name: fixit-agent
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      FIXIT_LLM: ${FIXIT_LLM:-mock}
+      FIXIT_FAULT: ${FIXIT_FAULT:-none}
+      FIXIT_DEMO_CARDINALITY: ${FIXIT_DEMO_CARDINALITY:-0}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./sample_repo:/workspace
+    ports:
+      - "8000:8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
