@@ -221,7 +221,7 @@ def complete_with_retry(llm: LLM, messages: list[dict], tools: list[dict]) -> LL
             duration = time.perf_counter() - start
             metrics.LLM_DURATION.labels(provider=provider).observe(duration)
             metrics.LLM_REQUESTS.labels(provider=provider, status="error").inc()
-            log.warning("llm_call", msg="LLM call failed", provider=provider, duration_ms=int(duration * 1000),
+            log.error("llm_call", msg="LLM call failed", provider=provider, duration_ms=int(duration * 1000),
                         status="error", attempt=attempt, exc_type=type(e).__name__, exc_message=str(e)[:200])
             if attempt == MAX_ATTEMPTS:
                 raise
