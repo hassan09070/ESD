@@ -25,6 +25,11 @@ services:
       FIXIT_FAULT: ${FIXIT_FAULT:-none}
       FIXIT_DEMO_CARDINALITY: ${FIXIT_DEMO_CARDINALITY:-0}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # lets the container reach Ollama on the host (Linux; Docker Desktop has it built in)
     volumes:
       # The repo the agent works on. Override with FIXIT_REPO=/path/to/your/repo
       # in .env or on the command line, then `docker compose up -d agent`.

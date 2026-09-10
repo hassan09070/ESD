@@ -28,7 +28,18 @@ uv sync                       # local venv for the CLI + tests
 | Elasticsearch | http://localhost:9200 | `_cat/indices/fixit-logs-*?v` |
 | Node Exporter | http://localhost:9100/metrics | machine metrics |
 
-To use the real model instead of the mock: put `ANTHROPIC_API_KEY=sk-ant-…` and `FIXIT_LLM=anthropic` in `.env`, then `docker compose up -d agent`.
+The default LLM is the scripted mock. Two real backends are available:
+
+- **Ollama (local, free).** Install Ollama on the host, pull a small coding model, and switch the backend:
+  ```sh
+  brew install ollama && brew services start ollama       # or https://ollama.com/download
+  ollama pull qwen2.5-coder:7b                             # ~4.7 GB; any tool-capable model works (OLLAMA_MODEL)
+  echo FIXIT_LLM=ollama >> .env && docker compose up -d agent
+  uv run fixit health                                      # -> 'llm': 'ollama'
+  ```
+  The container reaches the host's Ollama at `host.docker.internal:11434` (`OLLAMA_URL`). On Linux, make Ollama listen on all interfaces (`OLLAMA_HOST=0.0.0.0 ollama serve`). Cost metrics stay at $0 for local models.
+  With `qwen2.5-coder:7b` on an M3 MacBook Air the sample repo is fixed in ~8 iterations / ~50 s (vs 5 / 2 s for the mock). Small models narrate instead of calling tools, emit tool calls as plain JSON text, or return empty replies; `OllamaLLM` and the loop tolerate all three (JSON recovery, "Continue." on empty replies, up to 3 state-aware nudges). `qwen2.5-coder:3b` was tried and is **not** good enough: in two runs it dropped a function while rewriting the file and then started editing the test file. Use the 7b.
+- **Anthropic.** Put `ANTHROPIC_API_KEY=sk-ant-…` and `FIXIT_LLM=anthropic` in `.env`, then `docker compose up -d agent`.
 
 ## Use
 
@@ -42,7 +53,7 @@ uv run fixit run "make the failing tests pass" --repo /workspace
 docker compose up -d agent          # back to ./sample_repo
 ```
 
-Note that the default `MockLLM` is scripted for the sample repo only: it always rewrites `calculator.py` with known-good content. Fixing real code needs `FIXIT_LLM=anthropic` and an API key in `.env`.
+Note that the default `MockLLM` is scripted for the sample repo only: it always rewrites `calculator.py` with known-good content. Fixing real code needs `FIXIT_LLM=ollama` (local) or `FIXIT_LLM=anthropic` (API key).
 
 ```sh
 $ uv run fixit health
@@ -131,11 +142,12 @@ scripts/cleanup.sh        # docker compose down -v (removes containers, network 
 - **Node Exporter fails with `path / is mounted on / but it is not a shared or slave mount`**: Docker Desktop cannot bind-mount the host root. The default compose file therefore measures the Docker Linux VM (hostname `docker-desktop`). On a real Linux host use the real machine: `docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d`.
 - **Filebeat: `config file must be owned by the user identifier`**: already handled by `--strict.perms=false` in the compose command.
 - **Duplicate log lines after a restart**: shouldn't happen — Filebeat's registry lives in the `filebeat_registry` volume. If you `down -v`, the registry is wiped together with the indices, so nothing is duplicated either.
+- **`FIXIT_LLM=ollama` returns outcome `error` / HTTP 503 with `model not found`**: `ollama pull <OLLAMA_MODEL>` on the host. `connection error`: Ollama is not running (`brew services start ollama`) or, on Linux, not listening on `0.0.0.0`.
 - **`uv run fixit run` says repo path not visible**: the agent can only see `./sample_repo` (mounted at `/workspace`). Pass `--repo ./sample_repo` or `--repo /workspace`.
 
 ## Credits
 
 - Prometheus, Grafana, Node Exporter, Elasticsearch, Kibana, Filebeat: the official Docker images, versions pinned in `docker-compose.yml`.
-- Python libraries: FastAPI, uvicorn, Typer, httpx, prometheus_client, structlog, anthropic SDK.
+- Python libraries: FastAPI, uvicorn, Typer, httpx, prometheus_client, structlog, anthropic SDK. Local inference: Ollama with Qwen2.5-Coder (Alibaba, Apache-2.0).
 - Node dashboard is a trimmed hand-written version of the ideas in Grafana community dashboard 1860 (Node Exporter Full).
 - Agent loop, tools, sandbox, metrics, logging config, dashboards, scripts and this documentation were written for this assignment, with Claude Code (Anthropic) used as a pair-programming assistant; all design decisions and results are the author's.

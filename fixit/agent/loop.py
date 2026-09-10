@@ -21,14 +21,42 @@ from agent.sandbox import Sandbox
 from agent.tools import TOOL_SCHEMAS, Toolbox
 
 MAX_ITERATIONS = 10
+MAX_NUDGES = 4  # times we push back when the model narrates instead of calling a tool
+MAX_EMPTY = 3   # empty replies (small models sometimes emit nothing) answered with "Continue."
 
 SYSTEM_PROMPT = (
     "You are fixit, an automated coding agent working inside a copy of a Python repository. "
     "You have three tools: read_file, write_file, run_tests. Work in small steps: run the tests first "
     "to see what fails, read only the files you need, make the smallest change that fixes the failure, "
-    "then run the tests again. When run_tests reports PASSED, stop calling tools and reply with a short "
-    "summary of what you changed. Do not modify test files unless the task explicitly asks you to."
+    "then run the tests again. Act by calling tools, one step at a time; never just describe what you "
+    "are going to do. Never guess what a file contains: call read_file and work from the real content. "
+    "write_file replaces the whole file, so pass the complete new content. When run_tests reports "
+    "PASSED, stop calling tools and reply with a short summary of what you changed. Do not modify "
+    "test files unless the task explicitly asks you to."
 )
+NUDGE_DONE = (
+    "Your reply contained no tool call. If the task is finished reply with exactly: DONE. "
+    "Otherwise call one tool now."
+)
+
+
+WRITE_SHAPE = '{"name": "write_file", "arguments": {"path": "<file>", "content": "<complete new file content>"}}'
+RUN_SHAPE = '{"name": "run_tests", "arguments": {}}'
+
+
+def nudge_for(last_tool: str | None, tests_passed: bool) -> str:
+    """State-aware push-back when the model narrates instead of acting. Shows the literal
+    call shape because small models follow an example far better than an instruction."""
+    if tests_passed:
+        return NUDGE_DONE
+    if last_tool == "read_file":
+        return f"You described the change but did not call write_file. Reply with ONLY the tool call, nothing else: {WRITE_SHAPE}"
+    if last_tool == "write_file":
+        return f"Now run the tests. Reply with ONLY the tool call: {RUN_SHAPE}"
+    if last_tool == "run_tests":
+        return (f"The tests still fail (see the assertion above). Apply your fix by calling write_file with the "
+                f"COMPLETE corrected file. Reply with ONLY the tool call: {WRITE_SHAPE}")
+    return f"Your reply contained no tool call. Reply with ONLY a tool call, e.g. {RUN_SHAPE}"
 
 
 @dataclass
@@ -67,6 +95,9 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
     changed: list[str] = []
     error = error_type = None
     tests_passed = False
+    nudges = 0
+    empties = 0
+    last_tool: str | None = None
 
     structlog.contextvars.bind_contextvars(run_id=run_id)
     log.info("task_started", msg="task started", task=task[:120], repo=str(repo_path), llm=llm.provider)
@@ -76,9 +107,10 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
     try:
         sandbox.create()
         tools = Toolbox(sandbox)
+        listing = ", ".join(sorted(str(f.relative_to(sandbox.workdir)) for f in sandbox._files())[:40])
         messages: list[dict] = [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": task},
+            {"role": "user", "content": f"{task}\n\nFiles in the repository: {listing}"},
         ]
         while iterations < MAX_ITERATIONS:
             iterations += 1
@@ -88,13 +120,25 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
             tokens_out += resp.output_tokens
             messages.append(_assistant_message(resp))
             if not resp.tool_calls:
-                summary = resp.text or ""
+                text = (resp.text or "").strip()
+                if not text and empties < MAX_EMPTY and iterations < MAX_ITERATIONS:
+                    empties += 1
+                    log.info("empty_reply", msg="model returned nothing; asking it to continue", empties=empties)
+                    messages.append({"role": "user", "content": "Continue."})
+                    continue
+                if not tests_passed and text != "DONE" and nudges < MAX_NUDGES and iterations < MAX_ITERATIONS:
+                    nudges += 1
+                    log.info("nudge", msg="model narrated instead of calling a tool; asking it to act", nudge=nudges, last_tool=last_tool)
+                    messages.append({"role": "user", "content": nudge_for(last_tool, tests_passed)})
+                    continue
+                summary = text
                 outcome = "success" if tests_passed else "failed"
                 break
             results = []
             for call in resp.tool_calls:
                 text, status = tools.dispatch(call.name, call.input)
                 metrics.TOOL_CALLS.labels(tool=call.name, status=status).inc()
+                last_tool = call.name
                 if call.name == "run_tests":
                     tests_passed = tools.last_test_result is not None and tools.last_test_result.result == "passed"
                 results.append({"type": "tool_result", "tool_use_id": call.id, "content": text, "is_error": status == "error"})

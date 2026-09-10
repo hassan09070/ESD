@@ -1,4 +1,4 @@
-"""LLM abstraction: AnthropicLLM (real), MockLLM (scripted), FaultInjectingLLM (Part E switch).
+"""LLM abstraction: AnthropicLLM, OllamaLLM (local), MockLLM (scripted), FaultInjectingLLM (Part E switch).
 
 All three expose the same `complete(messages, tools) -> LLMResponse` method. `build_llm()`
 picks the backend from FIXIT_LLM and wraps it in FaultInjectingLLM using FIXIT_FAULT.
@@ -7,7 +7,9 @@ backoff so a flaky provider does not immediately kill a task.
 """
 from __future__ import annotations
 
+import json
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -28,7 +30,10 @@ PRICING_USD_PER_MTOK: dict[str, dict[str, float]] = {
 
 
 def cost_usd(model: str, tokens_in: int, tokens_out: int) -> float:
-    price = PRICING_USD_PER_MTOK.get(model, PRICING_USD_PER_MTOK[MODEL])
+    """USD for a call. Models not in the table (local Ollama models) cost 0."""
+    price = PRICING_USD_PER_MTOK.get(model)
+    if price is None:
+        return 0.0
     return tokens_in / 1e6 * price["input"] + tokens_out / 1e6 * price["output"]
 
 
@@ -108,6 +113,166 @@ class AnthropicLLM:
             tool_calls=calls,
             input_tokens=resp.usage.input_tokens,
             output_tokens=resp.usage.output_tokens,
+        )
+
+
+# --------------------------------------------------------------------------- Ollama (local)
+OLLAMA_DEFAULT_URL = "http://host.docker.internal:11434"  # the host's Ollama, as seen from the container
+OLLAMA_DEFAULT_MODEL = "qwen2.5-coder:7b"
+
+
+def _to_ollama_messages(messages: list[dict]) -> list[dict]:
+    """Convert our Anthropic-shaped transcript into Ollama /api/chat messages.
+
+    assistant tool_use blocks -> assistant.tool_calls; user tool_result blocks -> role=tool
+    messages (one per result, in order). Plain strings pass through unchanged."""
+    out: list[dict] = []
+    for m in messages:
+        role, content = m["role"], m["content"]
+        if isinstance(content, str):
+            out.append({"role": role, "content": content})
+            continue
+        if role == "assistant":
+            text = "".join(b.get("text", "") for b in content if b.get("type") == "text")
+            calls = [
+                {"function": {"name": b["name"], "arguments": b.get("input", {})}}
+                for b in content if b.get("type") == "tool_use"
+            ]
+            msg: dict = {"role": "assistant", "content": text}
+            if calls:
+                msg["tool_calls"] = calls
+            out.append(msg)
+        else:  # user message carrying tool results
+            for b in content:
+                if b.get("type") == "tool_result":
+                    out.append({"role": "tool", "content": str(b.get("content", ""))})
+                elif b.get("type") == "text":
+                    out.append({"role": "user", "content": b["text"]})
+    return out
+
+
+def _to_ollama_tools(tools: list[dict]) -> list[dict]:
+    """Anthropic tool schema (name/description/input_schema) -> OpenAI-style function tools."""
+    return [
+        {"type": "function", "function": {"name": t["name"], "description": t.get("description", ""),
+                                          "parameters": t.get("input_schema", {"type": "object", "properties": {}})}}
+        for t in tools
+    ]
+
+
+_TOOL_CALL_BLOCK = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
+_SPECIAL_TOKEN = re.compile(r"<\|[a-z_]+\|>")  # e.g. <|im_start|>, leaked by small models
+
+
+def _extract_text_tool_calls(text: str | None, tool_names: set[str]) -> tuple[list[dict], str | None]:
+    """Small models sometimes write the call into the text instead of `tool_calls`, e.g.
+    `{"name": "run_tests", "arguments": {}}` (possibly after some prose, inside a code
+    fence, or in <tool_call> tags). Scan the text for JSON objects, keep those whose
+    `name` is a known tool, and return (calls, remaining_prose)."""
+    if not text:
+        return [], text
+    decoder = json.JSONDecoder()
+    calls: list[dict] = []
+    spans: list[tuple[int, int]] = []
+    i = 0
+    while True:
+        j = text.find("{", i)
+        if j < 0:
+            break
+        try:
+            obj, end = decoder.raw_decode(text, j)
+        except json.JSONDecodeError:
+            i = j + 1
+            continue
+        items = obj if isinstance(obj, list) else [obj]
+        found = False
+        for item in items:
+            if isinstance(item, dict) and item.get("name") in tool_names:
+                args = item.get("arguments", item.get("parameters", item.get("input", {})))
+                if isinstance(args, str):
+                    try:
+                        args = json.loads(args)
+                    except json.JSONDecodeError:
+                        args = {}
+                calls.append({"function": {"name": item["name"], "arguments": args if isinstance(args, dict) else {}}})
+                found = True
+        if found:
+            spans.append((j, end))
+        i = end if found else j + 1
+    if not calls:
+        return [], text
+    rest = text
+    for a, b in reversed(spans):
+        rest = rest[:a] + rest[b:]
+    rest = _TOOL_CALL_BLOCK.sub("", rest)
+    rest = re.sub(r"```(?:json)?\s*```", "", rest).strip()
+    return calls, (rest or None)
+
+
+class OllamaLLM:
+    """Local model through Ollama's native /api/chat endpoint with tool calling.
+
+    Runs on the host (Metal-accelerated on a Mac); the agent container reaches it at
+    host.docker.internal:11434. Token counts come from prompt_eval_count/eval_count and
+    cost is always $0. Small models sometimes return tool arguments as a JSON string,
+    which is tolerated. Any HTTP/connection failure is raised as LLMError (retryable)."""
+
+    provider = "ollama"
+
+    def __init__(self, model: str | None = None, base_url: str | None = None, num_ctx: int | None = None,
+                 timeout_s: float = 600.0, transport=None):
+        self.model = model or os.environ.get("OLLAMA_MODEL", OLLAMA_DEFAULT_MODEL)
+        self.base_url = (base_url or os.environ.get("OLLAMA_URL", OLLAMA_DEFAULT_URL)).rstrip("/")
+        self.num_ctx = num_ctx or int(os.environ.get("OLLAMA_NUM_CTX", "8192"))
+        self.timeout_s = timeout_s
+        self._transport = transport  # tests inject httpx.MockTransport
+        self._calls = 0
+        self._lock = threading.Lock()
+
+    def complete(self, messages: list[dict], tools: list[dict]) -> LLMResponse:
+        import httpx
+
+        body = {
+            "model": self.model,
+            "messages": _to_ollama_messages(messages),
+            "tools": _to_ollama_tools(tools),
+            "stream": False,
+            "options": {"temperature": 0, "num_ctx": self.num_ctx, "stop": ["<|im_start|>"]},
+        }
+        try:
+            with httpx.Client(transport=self._transport, timeout=self.timeout_s) as client:
+                resp = client.post(f"{self.base_url}/api/chat", json=body)
+        except httpx.HTTPError as e:
+            raise LLMError(f"ollama connection error: {e}") from e
+        if resp.status_code == 404:
+            raise LLMError(f"ollama: model {self.model!r} not found - run `ollama pull {self.model}`")
+        if resp.status_code >= 400:
+            raise LLMError(f"ollama status {resp.status_code}: {resp.text[:200]}")
+        data = resp.json()
+        msg = data.get("message", {})
+        raw_calls = msg.get("tool_calls", []) or []
+        content = _SPECIAL_TOKEN.sub("", msg.get("content") or "")
+        if not raw_calls:
+            raw_calls, content = _extract_text_tool_calls(content, {t["name"] for t in tools})
+        calls: list[ToolCall] = []
+        for tc in raw_calls:
+            fn = tc.get("function", {})
+            args = fn.get("arguments", {})
+            if isinstance(args, str):
+                try:
+                    args = json.loads(args)
+                except json.JSONDecodeError:
+                    args = {}
+            with self._lock:
+                self._calls += 1
+                n = self._calls
+            calls.append(ToolCall(id=tc.get("id") or f"toolu_ollama_{n}", name=fn.get("name", ""), input=args or {}))
+        text = (content or "").strip() or None
+        return LLMResponse(
+            text=text,
+            tool_calls=calls,
+            input_tokens=int(data.get("prompt_eval_count", 0) or 0),
+            output_tokens=int(data.get("eval_count", 0) or 0),
         )
 
 
@@ -249,6 +414,8 @@ def build_llm() -> FaultInjectingLLM:
     fault = os.environ.get("FIXIT_FAULT", "none").lower()
     if backend == "anthropic":
         inner: LLM = AnthropicLLM()
+    elif backend == "ollama":
+        inner = OllamaLLM()
     elif backend == "mock":
         inner = MockLLM()
     else:

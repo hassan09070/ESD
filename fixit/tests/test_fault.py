@@ -61,6 +61,45 @@ class GiveUpLLM:
         return LLMResponse(text="I cannot fix this.", tool_calls=[], input_tokens=10, output_tokens=1)
 
 
-def test_stopping_without_passing_tests_is_failed(broken_repo):
+def test_stopping_without_passing_tests_is_failed_after_nudges(broken_repo):
+    from agent.loop import MAX_NUDGES
     result = run_task("fail000000001", "fix", str(broken_repo), GiveUpLLM())
+    assert result.outcome == "failed" and result.iterations == 1 + MAX_NUDGES
+
+
+class DoneLLM:
+    provider = "mock"
+    model = "claude-sonnet-4-6"
+
+    def complete(self, messages, tools):
+        return LLMResponse(text="DONE", tool_calls=[], input_tokens=10, output_tokens=1)
+
+
+def test_explicit_done_is_not_nudged(broken_repo):
+    result = run_task("done000000001", "fix", str(broken_repo), DoneLLM())
     assert result.outcome == "failed" and result.iterations == 1
+
+
+class EmptyThenFixLLM:
+    """Returns an empty reply first (like a glitching small model), then behaves like the mock."""
+    provider = "mock"
+    model = "claude-sonnet-4-6"
+
+    def __init__(self):
+        from agent.llm import MockLLM
+        self.inner = MockLLM(latency=0)
+        self.first = True
+
+    def complete(self, messages, tools):
+        if self.first:
+            self.first = False
+            return LLMResponse(text="", tool_calls=[], input_tokens=1, output_tokens=0)
+        # MockLLM keys its script off assistant turns; ignore our empty turn + "Continue." pair
+        trimmed = [m for m in messages if not (m["role"] == "assistant" and not m["content"])]
+        trimmed = [m for m in trimmed if m.get("content") != "Continue."]
+        return self.inner.complete(trimmed, tools)
+
+
+def test_empty_reply_is_continued_not_failed(broken_repo):
+    result = run_task("empty00000001", "fix", str(broken_repo), EmptyThenFixLLM())
+    assert result.outcome == "success" and result.iterations == 6
