@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Load generator: run N agent tasks against the server (stdlib only, no deps).
 
-    python scripts/load.py --tasks 20 --concurrency 1 [--no-reset] [--url http://localhost:8000]
+    python scripts/load.py --tasks 20 --concurrency 1 [--min-duration 120] [--no-reset] [--url ...]
+
+--min-duration S keeps submitting tasks (beyond --tasks) until at least S seconds have
+elapsed, so an experiment stage stays busy for the whole Prometheus window.
 
 For each task: (optionally) run sample_repo/reset.sh, POST /tasks with an X-Request-ID
 header, record outcome + duration. Prints a summary table (success count, mean/p95 duration)
@@ -20,7 +23,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -75,6 +78,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tasks", type=int, default=20)
     ap.add_argument("--concurrency", type=int, default=1)
+    ap.add_argument("--min-duration", type=float, default=0.0, help="keep going until this many seconds have elapsed")
     ap.add_argument("--url", default=os.environ.get("FIXIT_URL", "http://localhost:8000"))
     ap.add_argument("--task", default="make the failing tests pass")
     ap.add_argument("--reset", dest="reset", action="store_true", default=True)
@@ -86,8 +90,21 @@ def main() -> int:
     start_ts = utc()
     t0 = time.perf_counter()
     print(f"load: {args.tasks} tasks, concurrency {args.concurrency}, url {args.url}, start {start_ts}")
+    rows: list[dict] = []
+    submitted = 0
     with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
-        rows = list(ex.map(lambda i: one_task(i, args.url, args.task, args.reset), range(1, args.tasks + 1)))
+        pending = set()
+        while True:
+            elapsed = time.perf_counter() - t0
+            need_more = submitted < args.tasks or elapsed < args.min_duration
+            if not need_more and not pending:
+                break
+            while need_more and len(pending) < args.concurrency:
+                submitted += 1
+                pending.add(ex.submit(one_task, submitted, args.url, args.task, args.reset))
+            done, pending = wait(pending, return_when=FIRST_COMPLETED)
+            rows.extend(f.result() for f in done)
+    rows.sort(key=lambda r: r["i"])
     end_ts = utc()
     wall = time.perf_counter() - t0
     if args.reset:

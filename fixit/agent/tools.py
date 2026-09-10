@@ -7,10 +7,15 @@ is what the loop calls and is where per-tool metrics/logging hang (Phase 2/3).
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from agent import metrics
+
+log = structlog.get_logger()
 from agent.sandbox import Sandbox, TestRunResult
 
 TAIL_LINES = 60
@@ -93,9 +98,21 @@ class Toolbox:
     def dispatch(self, name: str, args: dict[str, Any]) -> tuple[str, str]:
         """Run a tool by name. Returns (result_text, status) where status is ok|error.
         Errors are returned to the LLM as text, never raised.
-        Records fixit_tool_exec_seconds{tool} (Summary) around every call."""
-        with metrics.TOOL_EXEC_SECONDS.labels(tool=name).time():
-            return self._dispatch(name, args)
+        Records fixit_tool_exec_seconds{tool} (Summary) and logs a `tool_call` event. For
+        write_file only the path and byte count are logged, never the content."""
+        start = time.perf_counter()
+        text, status = self._dispatch(name, args)
+        duration = time.perf_counter() - start
+        metrics.TOOL_EXEC_SECONDS.labels(tool=name).observe(duration)
+        extra: dict[str, Any] = {}
+        if name in ("read_file", "write_file"):
+            extra["path"] = str(args.get("path", ""))[:200]
+        if name == "write_file":
+            extra["bytes"] = len(str(args.get("content", "")).encode())
+        if name == "run_tests" and self.last_test_result is not None:
+            extra["test_result"] = self.last_test_result.result
+        log.info("tool_call", msg="tool executed", tool=name, duration_ms=int(duration * 1000), status=status, **extra)
+        return text, status
 
     def _dispatch(self, name: str, args: dict[str, Any]) -> tuple[str, str]:
         try:

@@ -1,0 +1,9 @@
+{
+  "_comment": "ILM policy fixit-logs-policy: keep daily fixit-logs-* indices in the hot phase, delete them 7 days after creation.",
+  "policy": {
+    "phases": {
+      "hot": {"min_age": "0ms", "actions": {}},
+      "delete": {"min_age": "7d", "actions": {"delete": {"delete_searchable_snapshot": true}}}
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "_comment": "Index template for fixit-logs-*: attaches the ILM policy, 0 replicas (single node), and explicit keyword/number mappings for the fields our KQL searches use. Unknown fields are still mapped dynamically.",
+  "index_patterns": ["fixit-logs-*"],
+  "priority": 500,
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "fixit-logs-policy",
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "5s"
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": {"type": "date"},
+        "ts": {"type": "date"},
+        "level": {"type": "keyword"},
+        "service": {"type": "keyword"},
+        "event": {"type": "keyword"},
+        "msg": {"type": "text"},
+        "message": {"type": "text"},
+        "run_id": {"type": "keyword"},
+        "request_id": {"type": "keyword"},
+        "iteration": {"type": "integer"},
+        "tool": {"type": "keyword"},
+        "status": {"type": "keyword"},
+        "status_code": {"type": "integer"},
+        "outcome": {"type": "keyword"},
+        "provider": {"type": "keyword"},
+        "result": {"type": "keyword"},
+        "test_result": {"type": "keyword"},
+        "method": {"type": "keyword"},
+        "path": {"type": "keyword"},
+        "duration_ms": {"type": "long"},
+        "input_tokens": {"type": "long"},
+        "output_tokens": {"type": "long"},
+        "tokens_in": {"type": "long"},
+        "tokens_out": {"type": "long"},
+        "passed": {"type": "integer"},
+        "failed": {"type": "integer"},
+        "attempt": {"type": "integer"},
+        "bytes": {"type": "long"},
+        "cost_usd": {"type": "double"},
+        "exc_type": {"type": "keyword"},
+        "exc_message": {"type": "text"},
+        "container": {"properties": {"id": {"type": "keyword"}, "name": {"type": "keyword"}}}
+      }
+    }
+  }
+}

@@ -13,7 +13,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+import structlog
+
 from agent import metrics
+
+log = structlog.get_logger()
 
 MODEL = "claude-sonnet-4-6"
 
@@ -213,16 +217,26 @@ def complete_with_retry(llm: LLM, messages: list[dict], tools: list[dict]) -> LL
         start = time.perf_counter()
         try:
             resp = llm.complete(messages, tools)
-        except LLMError:
-            metrics.LLM_DURATION.labels(provider=provider).observe(time.perf_counter() - start)
+        except LLMError as e:
+            duration = time.perf_counter() - start
+            metrics.LLM_DURATION.labels(provider=provider).observe(duration)
             metrics.LLM_REQUESTS.labels(provider=provider, status="error").inc()
+            log.warning("llm_call", msg="LLM call failed", provider=provider, duration_ms=int(duration * 1000),
+                        status="error", attempt=attempt, exc_type=type(e).__name__, exc_message=str(e)[:200])
             if attempt == MAX_ATTEMPTS:
                 raise
+            backoff = BACKOFF_BASE_S * 2 ** (attempt - 1)
             metrics.LLM_REQUESTS.labels(provider=provider, status="retry").inc()
-            time.sleep(BACKOFF_BASE_S * 2 ** (attempt - 1))
+            log.warning("llm_retry", msg=f"retrying LLM call in {backoff:.1f}s", provider=provider, attempt=attempt,
+                        next_attempt=attempt + 1, backoff_s=backoff, exc_type=type(e).__name__)
+            time.sleep(backoff)
             continue
-        metrics.LLM_DURATION.labels(provider=provider).observe(time.perf_counter() - start)
+        duration = time.perf_counter() - start
+        metrics.LLM_DURATION.labels(provider=provider).observe(duration)
         metrics.LLM_REQUESTS.labels(provider=provider, status="ok").inc()
+        log.info("llm_call", msg="LLM call completed", provider=provider, duration_ms=int(duration * 1000),
+                 input_tokens=resp.input_tokens, output_tokens=resp.output_tokens, status="ok", attempt=attempt,
+                 tool_calls=len(resp.tool_calls))
         metrics.LLM_TOKENS.labels(direction="input").inc(resp.input_tokens)
         metrics.LLM_TOKENS.labels(direction="output").inc(resp.output_tokens)
         metrics.LLM_COST.labels(provider=provider).inc(cost_usd(llm.model, resp.input_tokens, resp.output_tokens))

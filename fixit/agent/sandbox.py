@@ -16,7 +16,11 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+import structlog
+
 from agent import metrics
+
+log = structlog.get_logger()
 
 TEST_TIMEOUT_S = 30
 IGNORE = shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache", "*.pyc", ".venv", "node_modules")
@@ -70,14 +74,19 @@ class Sandbox:
                 env=env,
             )
         except subprocess.TimeoutExpired:
+            duration = time.perf_counter() - start
             metrics.SANDBOX_TEST_RUNS.labels(result="timeout").inc()
-            return TestRunResult("timeout", f"TIMEOUT: tests exceeded {timeout_s:.0f}s", 0, 0, time.perf_counter() - start)
+            log.warning("test_run", msg="pytest timed out", result="timeout", duration_ms=int(duration * 1000), passed=0, failed=0)
+            return TestRunResult("timeout", f"TIMEOUT: tests exceeded {timeout_s:.0f}s", 0, 0, duration)
         output = (proc.stdout or "") + (proc.stderr or "")
         passed = _count(r"(\d+) passed", output)
         failed = _count(r"(\d+) failed", output) + _count(r"(\d+) error", output)
         result = "passed" if proc.returncode == 0 else "failed"
+        duration = time.perf_counter() - start
         metrics.SANDBOX_TEST_RUNS.labels(result=result).inc()
-        return TestRunResult(result, output, passed, failed, time.perf_counter() - start)
+        log.info("test_run", msg=f"pytest {result}: {passed} passed, {failed} failed", result=result,
+                 duration_ms=int(duration * 1000), passed=passed, failed=failed)
+        return TestRunResult(result, output, passed, failed, duration)
 
     def _files(self) -> list[Path]:
         out = []

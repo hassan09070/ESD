@@ -11,7 +11,11 @@ from __future__ import annotations
 import time
 from dataclasses import asdict, dataclass, field
 
+import structlog
+
 from agent import metrics
+
+log = structlog.get_logger()
 from agent.llm import LLM, LLMError, LLMResponse, complete_with_retry, cost_usd
 from agent.sandbox import Sandbox
 from agent.tools import TOOL_SCHEMAS, Toolbox
@@ -64,6 +68,8 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
     error = error_type = None
     tests_passed = False
 
+    structlog.contextvars.bind_contextvars(run_id=run_id)
+    log.info("task_started", msg="task started", task=task[:120], repo=str(repo_path), llm=llm.provider)
     metrics.TASKS_IN_PROGRESS.inc()
     metrics.record_demo_request(run_id)  # Part E.2 only; no-op label-wise unless enabled
     sandbox = Sandbox(run_id, repo_path)
@@ -76,6 +82,7 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
         ]
         while iterations < MAX_ITERATIONS:
             iterations += 1
+            structlog.contextvars.bind_contextvars(iteration=iterations)
             resp = complete_with_retry(llm, messages, TOOL_SCHEMAS)
             tokens_in += resp.input_tokens
             tokens_out += resp.output_tokens
@@ -99,9 +106,11 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
     except LLMError as e:
         outcome, error, error_type = "error", str(e), "LLMError"
         summary = f"LLM unavailable: {e}"
+        log.error("error", msg="LLM unavailable after retries", exc_type="LLMError", exc_message=str(e)[:200])
     except Exception as e:  # noqa: BLE001
         outcome, error, error_type = "error", str(e), type(e).__name__
         summary = f"internal error: {type(e).__name__}: {e}"
+        log.error("error", msg="unexpected exception in agent loop", exc_type=type(e).__name__, exc_message=str(e)[:200], exc_info=True)
     finally:
         sandbox.cleanup()
         metrics.TASKS_IN_PROGRESS.dec()
@@ -110,6 +119,11 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
     metrics.TASKS_TOTAL.labels(outcome=outcome).inc()
     metrics.TASK_DURATION.labels(outcome=outcome).observe(duration)
     metrics.TASK_ITERATIONS.labels(outcome=outcome).observe(iterations)
+    total_cost = cost_usd(llm.model, tokens_in, tokens_out)
+    log.info("task_finished", msg=f"task {outcome}", outcome=outcome, iterations=iterations,
+             duration_ms=int(duration * 1000), cost_usd=round(total_cost, 6), tokens_in=tokens_in, tokens_out=tokens_out,
+             changed_files=len(changed))
+    structlog.contextvars.unbind_contextvars("run_id", "iteration")
     return TaskResult(
         run_id=run_id,
         outcome=outcome,
@@ -117,7 +131,7 @@ def run_task(run_id: str, task: str, repo_path: str, llm: LLM) -> TaskResult:
         duration_s=round(duration, 3),
         tokens_in=tokens_in,
         tokens_out=tokens_out,
-        cost_usd=round(cost_usd(llm.model, tokens_in, tokens_out), 6),
+        cost_usd=round(total_cost, 6),
         summary=summary,
         changed_files=changed,
         error=error,

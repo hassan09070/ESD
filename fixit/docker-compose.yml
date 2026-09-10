@@ -1,9 +1,14 @@
-# fixit stack: agent + metrics (Prometheus, Grafana, Node Exporter).
-# Log stack (Elasticsearch, Kibana, Filebeat, setup) is added in Phase 3.
+# fixit stack: agent + metrics (Prometheus, Grafana, Node Exporter) + logs (Filebeat,
+# Elasticsearch, Kibana) + a one-shot `setup` job that installs the ILM policy, index
+# template and Kibana data view.
 #
 # Named volumes hold state that must survive `docker compose down` (but not `down -v`):
-#   prom_data     Prometheus TSDB (7d retention)
-#   grafana_data  Grafana users/prefs (dashboards themselves are provisioned from files)
+#   prom_data          Prometheus TSDB (7d retention)
+#   grafana_data       Grafana users/prefs (dashboards themselves are provisioned from files)
+#   es_data            Elasticsearch indices (fixit-logs-* deleted by ILM after 7d)
+#   filebeat_registry  Filebeat's read offsets, so a restart does not re-ship old lines
+# The agent's own stdout is kept by Docker's json-file driver (max 3 x 10 MB per container,
+# under /var/lib/docker/containers/<id>/); those files are removed with the container.
 # ./sample_repo is bind-mounted into the agent at /workspace: the CLI's --repo ./sample_repo
 # is resolved to that path inside the container.
 services:
@@ -81,6 +86,95 @@ services:
     ports:
       - "9100:9100"
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    container_name: fixit-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.ml.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.18.0
+    container_name: fixit-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      TELEMETRY_ENABLED: "false"
+      XPACK_SECURITY_ENCRYPTIONKEY: fixit-local-only-key-not-for-production-use
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: fixit-local-only-key-not-for-production-use
+      XPACK_REPORTING_ENCRYPTIONKEY: fixit-local-only-key-not-for-production-use
+    deploy:
+      resources:
+        limits:
+          memory: 1500m
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status | grep -q '\"level\":\"available\"' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 40s
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.18.0
+    container_name: fixit-filebeat
+    user: root
+    command: ["filebeat", "-e", "--strict.perms=false"]
+    volumes:
+      - ./monitoring/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - filebeat_registry:/usr/share/filebeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+
+  # One-shot: ILM policy + index template + Kibana data view. Exits 0 when done.
+  setup:
+    image: curlimages/curl:8.14.1
+    container_name: fixit-setup
+    entrypoint: ["/bin/sh", "/setup/setup_elastic.sh"]
+    environment:
+      ES_URL: http://elasticsearch:9200
+      KIBANA_URL: http://kibana:5601
+      ILM_POLICY_FILE: /setup/ilm_policy.json
+      INDEX_TEMPLATE_FILE: /setup/index_template.json
+    volumes:
+      - ./scripts/setup_elastic.sh:/setup/setup_elastic.sh:ro
+      - ./monitoring/elasticsearch/ilm_policy.json:/setup/ilm_policy.json:ro
+      - ./monitoring/elasticsearch/index_template.json:/setup/index_template.json:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+
 volumes:
   prom_data:
   grafana_data:
+  es_data:
+  filebeat_registry:
