@@ -1,0 +1,111 @@
+# cold_start (scripts/experiment_fault.sh cold_start 8)
+=== stage baseline 2026-09-13T13:47:59Z -> 2026-09-13T13:50:02Z (window 123s) ===
+Prometheus (instant query at window end):
+  spawn p50 warm (s)             0.025
+  spawn p95 warm (s)             0.048
+  spawn p50 cold (s)             0.500
+  spawn p95 cold (s)             0.950
+  spawn p99 all (s)              0.550
+  spawn mean all (s)             0.011
+  spawns warm (count)            180.418
+  spawns cold (count)            4.100
+  roundtrip p50 (s)              0.003
+  roundtrip p95 (s)              0.021
+  roundtrip p99 (s)              0.046
+  queue wait p95 (s)             0.000
+  HTTP p95 POST sandbox (s)      0.005
+  HTTP p95 POST /sessions (s)    0.005
+  HTTP 5xx (count)               0.000
+  sessions ok                    184.518
+  sessions queued_timeout        0.000
+  sessions error                 0.000
+  reaped user_exit               179.393
+  reaped admin                   0.000
+  warm pool size (avg)           1.600
+  sandbox cpu cores sum (max)    0.000
+  machine CPU busy % (avg)       40.431
+  machine load1 (max)            7.280
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"sandbox_spawn" and spawn_ms > 2000          0
+  event:"sandbox_spawn" and source:"cold"            4
+  event:"sandbox_spawn" and source:"warm"            176
+  event:"queue_wait" and queue_ms > 0                0
+  event:"limit_hit"                                  0
+  event:"ws_detach"                                  179
+  event:"sandbox_reaped" and reason:"user_exit"      179
+  level:"error"                                      0
+  event:"http_request" and status_code >= 500        0
+
+=== stage fault 2026-09-13T13:50:15Z -> 2026-09-13T13:52:20Z (window 125s) ===
+Prometheus (instant query at window end):
+  spawn p50 warm (s)             n/a
+  spawn p95 warm (s)             n/a
+  spawn p50 cold (s)             2.500
+  spawn p95 cold (s)             2.950
+  spawn p99 all (s)              2.990
+  spawn mean all (s)             2.243
+  spawns warm (count)            0.000
+  spawns cold (count)            100.000
+  roundtrip p50 (s)              0.003
+  roundtrip p95 (s)              0.017
+  roundtrip p99 (s)              0.023
+  queue wait p95 (s)             0.000
+  HTTP p95 POST sandbox (s)      2.465
+  HTTP p95 POST /sessions (s)    0.007
+  HTTP 5xx (count)               0.000
+  sessions ok                    100.000
+  sessions queued_timeout        0.000
+  sessions error                 0.000
+  reaped user_exit               98.277
+  reaped admin                   0.000
+  warm pool size (avg)           0.000
+  sandbox cpu cores sum (max)    0.000
+  machine CPU busy % (avg)       22.480
+  machine load1 (max)            7.540
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"sandbox_spawn" and spawn_ms > 2000          100
+  event:"sandbox_spawn" and source:"cold"            100
+  event:"sandbox_spawn" and source:"warm"            0
+  event:"queue_wait" and queue_ms > 0                0
+  event:"limit_hit"                                  0
+  event:"ws_detach"                                  100
+  event:"sandbox_reaped" and reason:"user_exit"      100
+  level:"error"                                      0
+  event:"http_request" and status_code >= 500        0
+
+=== stage recovery 2026-09-13T13:52:34Z -> 2026-09-13T13:54:36Z (window 122s) ===
+Prometheus (instant query at window end):
+  spawn p50 warm (s)             0.025
+  spawn p95 warm (s)             0.048
+  spawn p50 cold (s)             0.417
+  spawn p95 cold (s)             0.900
+  spawn p99 all (s)              0.433
+  spawn mean all (s)             0.009
+  spawns warm (count)            177.958
+  spawns cold (count)            4.044
+  roundtrip p50 (s)              0.003
+  roundtrip p95 (s)              0.015
+  roundtrip p99 (s)              0.032
+  queue wait p95 (s)             0.000
+  HTTP p95 POST sandbox (s)      0.005
+  HTTP p95 POST /sessions (s)    0.005
+  HTTP 5xx (count)               0.000
+  sessions ok                    182.002
+  sessions queued_timeout        0.000
+  sessions error                 0.000
+  reaped user_exit               177.958
+  reaped admin                   0.000
+  warm pool size (avg)           1.480
+  sandbox cpu cores sum (max)    0.000
+  machine CPU busy % (avg)       39.966
+  machine load1 (max)            8.340
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"sandbox_spawn" and spawn_ms > 2000          0
+  event:"sandbox_spawn" and source:"cold"            4
+  event:"sandbox_spawn" and source:"warm"            176
+  event:"queue_wait" and queue_ms > 0                0
+  event:"limit_hit"                                  0
+  event:"ws_detach"                                  180
+  event:"sandbox_reaped" and reason:"user_exit"      180
+  level:"error"                                      0
+  event:"http_request" and status_code >= 500        0

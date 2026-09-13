@@ -55,6 +55,8 @@ def test_spawn_exec_resize_stats_reap(real):
         read_until(sock, b"40 120")
         sock.sendall(b"touch /etc/x 2>&1; echo RO=$?\r")
         read_until(sock, b"RO=1")                                 # read-only rootfs
+        sock.sendall(b"touch ~/mine /tmp/mine; echo HOME_$?\r")
+        read_until(sock, b"HOME_0")                               # tmpfs home is owned by uid 1000
         sock.sendall(b"python3 -c 'import urllib.request as u; u.urlopen(\"http://example.com\", timeout=2)' 2>&1 | tail -c 60; echo NET_$((1+1))\r")
         out = read_until(sock, b"NET_2", timeout=15)
         assert b"Error" in out or b"error" in out or b"unreachable" in out or b"resolve" in out   # network none

@@ -1,0 +1,136 @@
+fault experiment mode=cpu_hog users/stage>=8 concurrency=6 session-seconds=20 min-stage=120s
+[14:04:26Z] load: users>=8 concurrency=6 min_duration=120.0s commands=5 session_seconds=20.0 -> http://localhost:8000
+  user   5 ok              warm queue=0 spawn=0 rtt p50=5.61ms 
+  user   4 ok              warm queue=0 spawn=0 rtt p50=3.84ms 
+  user   1 ok              cold queue=0 spawn=643 rtt p50=4.93ms 
+  user   0 ok              cold queue=0 spawn=627 rtt p50=4.15ms 
+  user   2 ok              cold queue=0 spawn=665 rtt p50=3.37ms 
+  user   3 ok              cold queue=0 spawn=677 rtt p50=4.06ms 
+  user   6 ok              warm queue=0 spawn=0 rtt p50=3.8ms 
+  user   7 ok              warm queue=0 spawn=0 rtt p50=3.26ms 
+  user   8 ok              warm queue=0 spawn=0 rtt p50=3.42ms 
+  user  10 ok              cold queue=0 spawn=687 rtt p50=2.94ms 
+  user   9 ok              cold queue=0 spawn=740 rtt p50=3.67ms 
+  user  11 ok              cold queue=0 spawn=773 rtt p50=2.77ms 
+  user  12 ok              warm queue=0 spawn=0 rtt p50=3.89ms 
+  user  13 ok              warm queue=0 spawn=0 rtt p50=3.04ms 
+  user  14 ok              warm queue=0 spawn=0 rtt p50=2.76ms 
+  user  16 ok              warm queue=0 spawn=0 rtt p50=3.3ms 
+  user  15 ok              warm queue=0 spawn=0 rtt p50=3.61ms 
+  user  17 ok              cold queue=0 spawn=586 rtt p50=3.32ms 
+  user  18 ok              warm queue=0 spawn=0 rtt p50=4.16ms 
+  user  19 ok              warm queue=0 spawn=0 rtt p50=2.52ms 
+  user  20 ok              warm queue=0 spawn=0 rtt p50=3.55ms 
+  user  22 ok              warm queue=0 spawn=0 rtt p50=3.91ms 
+  user  21 ok              warm queue=0 spawn=0 rtt p50=3.66ms 
+  user  23 ok              warm queue=0 spawn=0 rtt p50=2.73ms 
+  user  24 ok              warm queue=0 spawn=0 rtt p50=3.21ms 
+  user  25 ok              warm queue=0 spawn=0 rtt p50=2.98ms 
+  user  26 ok              warm queue=0 spawn=0 rtt p50=2.87ms 
+  user  27 ok              warm queue=0 spawn=0 rtt p50=3.3ms 
+  user  28 ok              warm queue=0 spawn=0 rtt p50=3.77ms 
+  user  29 ok              warm queue=0 spawn=0 rtt p50=2.67ms 
+  user  30 ok              warm queue=0 spawn=0 rtt p50=3.45ms 
+  user  31 ok              warm queue=0 spawn=0 rtt p50=3.75ms 
+  user  32 ok              warm queue=0 spawn=0 rtt p50=3.29ms 
+  user  33 ok              warm queue=0 spawn=0 rtt p50=3.52ms 
+  user  34 ok              warm queue=0 spawn=0 rtt p50=3.04ms 
+  user  35 ok              warm queue=0 spawn=0 rtt p50=3.06ms 
+
+== cpu_hog_baseline: 36 users 2026-09-13T14:04:26Z -> 14:06:36Z (130s) ==
+outcomes: {'ok': 36}
+spawn warm: n=28 mean=0ms p95=0ms max=0ms
+spawn cold: n=8 mean=675ms p95=773ms max=773ms
+queue: mean=0ms p95=0ms max=0ms
+terminal roundtrip (client): n=1044 p50=3.42ms p95=11.44ms p99=27.36ms
+wrote /Users/hassan/ESD/termlab/scripts/results/load_2026-09-13T140426Z_cpu_hog_baseline.json
+[14:06:53Z] load: users>=8 concurrency=6 min_duration=120.0s commands=5 session_seconds=20.0 -> http://localhost:8000
+  user   3 ok              warm queue=0 spawn=0 rtt p50=13.71ms 
+  user   5 ok              warm queue=0 spawn=1 rtt p50=19.47ms 
+  user   0 ok              cold queue=0 spawn=1215 rtt p50=21.31ms 
+  user   1 ok              cold queue=0 spawn=1270 rtt p50=16.03ms 
+  user   4 ok              cold queue=0 spawn=1171 rtt p50=12.86ms 
+  user   2 ok              cold queue=0 spawn=1337 rtt p50=16.56ms 
+  user   6 ok              warm queue=0 spawn=0 rtt p50=22.06ms 
+  user   7 ok              warm queue=0 spawn=0 rtt p50=23.74ms 
+  user   8 ok              warm queue=0 spawn=0 rtt p50=29.62ms 
+  user   9 ok              warm queue=0 spawn=1 rtt p50=16.16ms 
+  user  10 ok              cold queue=0 spawn=1449 rtt p50=15.29ms 
+  user  11 ok              cold queue=0 spawn=1443 rtt p50=9.75ms 
+  user  12 ok              warm queue=0 spawn=0 rtt p50=23.0ms 
+  user  13 ok              warm queue=0 spawn=0 rtt p50=15.56ms 
+  user  14 ok              warm queue=0 spawn=0 rtt p50=20.42ms 
+  user  16 ok              warm queue=0 spawn=0 rtt p50=8.84ms 
+  user  17 ok              warm queue=0 spawn=0 rtt p50=18.68ms 
+  user  15 ok              cold queue=0 spawn=1204 rtt p50=24.35ms 
+  user  19 ok              warm queue=0 spawn=0 rtt p50=24.67ms 
+  user  18 ok              warm queue=0 spawn=1 rtt p50=21.48ms 
+  user  20 ok              warm queue=0 spawn=0 rtt p50=29.11ms 
+  user  21 ok              warm queue=0 spawn=0 rtt p50=14.32ms 
+  user  22 ok              cold queue=0 spawn=1498 rtt p50=23.81ms 
+  user  23 ok              cold queue=0 spawn=1779 rtt p50=14.51ms 
+  user  25 ok              warm queue=0 spawn=0 rtt p50=13.47ms 
+  user  24 ok              warm queue=0 spawn=0 rtt p50=17.81ms 
+  user  26 ok              warm queue=0 spawn=0 rtt p50=13.24ms 
+  user  27 ok              warm queue=0 spawn=0 rtt p50=19.74ms 
+  user  28 ok              warm queue=0 spawn=0 rtt p50=20.77ms 
+  user  29 ok              warm queue=0 spawn=0 rtt p50=16.66ms 
+  user  30 ok              warm queue=0 spawn=0 rtt p50=13.53ms 
+  user  31 ok              warm queue=0 spawn=0 rtt p50=15.66ms 
+  user  32 ok              warm queue=0 spawn=0 rtt p50=16.69ms 
+  user  33 ok              warm queue=0 spawn=0 rtt p50=27.62ms 
+  user  34 ok              warm queue=0 spawn=0 rtt p50=24.62ms 
+  user  35 ok              warm queue=0 spawn=0 rtt p50=11.46ms 
+
+== cpu_hog_fault: 36 users 2026-09-13T14:06:53Z -> 14:09:02Z (129s) ==
+outcomes: {'ok': 36}
+spawn warm: n=27 mean=0ms p95=1ms max=1ms
+spawn cold: n=9 mean=1374ms p95=1779ms max=1779ms
+queue: mean=0ms p95=0ms max=0ms
+terminal roundtrip (client): n=988 p50=17.69ms p95=63.01ms p99=101.62ms
+wrote /Users/hassan/ESD/termlab/scripts/results/load_2026-09-13T140653Z_cpu_hog_fault.json
+[14:09:21Z] load: users>=8 concurrency=6 min_duration=120.0s commands=5 session_seconds=20.0 -> http://localhost:8000
+  user   3 ok              warm queue=0 spawn=0 rtt p50=9.65ms 
+  user   5 ok              warm queue=0 spawn=0 rtt p50=8.8ms 
+  user   2 ok              cold queue=0 spawn=543 rtt p50=5.97ms 
+  user   4 ok              cold queue=0 spawn=657 rtt p50=3.01ms 
+  user   1 ok              cold queue=0 spawn=633 rtt p50=5.42ms 
+  user   0 ok              cold queue=0 spawn=656 rtt p50=3.76ms 
+  user   6 ok              warm queue=0 spawn=0 rtt p50=6.29ms 
+  user   7 ok              warm queue=0 spawn=0 rtt p50=3.71ms 
+  user   8 ok              warm queue=0 spawn=0 rtt p50=4.14ms 
+  user  11 ok              warm queue=0 spawn=0 rtt p50=3.95ms 
+  user  10 ok              cold queue=0 spawn=670 rtt p50=3.61ms 
+  user   9 ok              cold queue=0 spawn=599 rtt p50=4.28ms 
+  user  13 ok              warm queue=0 spawn=0 rtt p50=2.79ms 
+  user  12 ok              warm queue=0 spawn=0 rtt p50=3.79ms 
+  user  14 ok              warm queue=0 spawn=0 rtt p50=3.03ms 
+  user  16 ok              warm queue=0 spawn=0 rtt p50=3.21ms 
+  user  15 ok              cold queue=0 spawn=618 rtt p50=3.23ms 
+  user  17 ok              cold queue=0 spawn=699 rtt p50=4.36ms 
+  user  19 ok              warm queue=0 spawn=0 rtt p50=2.55ms 
+  user  18 ok              warm queue=0 spawn=0 rtt p50=2.78ms 
+  user  20 ok              warm queue=0 spawn=0 rtt p50=2.87ms 
+  user  22 ok              warm queue=0 spawn=0 rtt p50=2.43ms 
+  user  21 ok              warm queue=0 spawn=0 rtt p50=3.2ms 
+  user  23 ok              warm queue=0 spawn=0 rtt p50=2.75ms 
+  user  24 ok              warm queue=0 spawn=0 rtt p50=2.63ms 
+  user  25 ok              warm queue=0 spawn=0 rtt p50=2.65ms 
+  user  26 ok              warm queue=0 spawn=0 rtt p50=2.53ms 
+  user  27 ok              warm queue=0 spawn=0 rtt p50=3.44ms 
+  user  28 ok              warm queue=0 spawn=0 rtt p50=2.3ms 
+  user  29 ok              warm queue=0 spawn=0 rtt p50=4.29ms 
+  user  30 ok              warm queue=0 spawn=0 rtt p50=2.25ms 
+  user  31 ok              warm queue=0 spawn=0 rtt p50=2.7ms 
+  user  32 ok              warm queue=0 spawn=2 rtt p50=2.92ms 
+  user  33 ok              warm queue=0 spawn=0 rtt p50=2.41ms 
+  user  34 ok              warm queue=0 spawn=1 rtt p50=3.38ms 
+  user  35 ok              warm queue=0 spawn=0 rtt p50=3.06ms 
+
+== cpu_hog_recovery: 36 users 2026-09-13T14:09:21Z -> 14:11:32Z (131s) ==
+outcomes: {'ok': 36}
+spawn warm: n=28 mean=0ms p95=1ms max=2ms
+spawn cold: n=8 mean=634ms p95=699ms max=699ms
+queue: mean=0ms p95=0ms max=0ms
+terminal roundtrip (client): n=1044 p50=3.28ms p95=14.76ms p99=43.12ms
+wrote /Users/hassan/ESD/termlab/scripts/results/load_2026-09-13T140921Z_cpu_hog_recovery.json

@@ -57,7 +57,7 @@ def sandbox_run_kwargs(settings: Settings, name: str, labels: dict[str, str], ho
     """
     kwargs = dict(
         image=settings.sandbox_image,
-        command=["stress-ng", "--cpu", "0", "--timeout", "0"] if hog else ["sleep", "infinity"],
+        command=["stress-ng", "--cpu", "0", "--timeout", "0", "--temp-path", "/tmp"] if hog else ["sleep", "infinity"],
         init=True,
         detach=True,
         name=name,
@@ -68,7 +68,8 @@ def sandbox_run_kwargs(settings: Settings, name: str, labels: dict[str, str], ho
         pids_limit=settings.sandbox_pids,
         user="1000:1000",
         read_only=True,
-        tmpfs={"/tmp": "rw,nosuid,size=64m", "/home/user": "rw,nosuid,size=64m"},
+        # uid/gid: a docker tmpfs is root-owned by default, and uid 1000 could not write its own home.
+        tmpfs={"/tmp": "rw,nosuid,size=64m,mode=1777", "/home/user": "rw,nosuid,size=64m,uid=1000,gid=1000,mode=0700"},
         cap_drop=["ALL"],
         security_opt=["no-new-privileges:true"],
         environment={"HOME": "/home/user", "TERM": "xterm-256color"},
