@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>termlab</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css">
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; background: #0b0e14; color: #d7dae0; font: 14px/1.4 system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: #131822; border-bottom: 1px solid #222a38; }
+  header h1 { font-size: 15px; margin: 0; letter-spacing: .04em; }
+  header .muted { color: #8b93a5; font-size: 12px; }
+  header .spacer { flex: 1; }
+  button { background: #2f6feb; color: #fff; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; }
+  button:disabled { background: #2a3140; color: #7b8496; cursor: default; }
+  #term { position: absolute; inset: 46px 0 0 0; padding: 6px; }
+  #status { min-width: 260px; }
+  .ok { color: #7ee787; } .warn { color: #f0b429; } .bad { color: #ff7b72; }
+  code { background: #1b2130; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>termlab</h1>
+  <span id="status" class="muted">connecting…</span>
+  <span class="spacer"></span>
+  <span id="pool" class="muted"></span>
+  <button id="new">New sandbox</button>
+</header>
+<div id="term"></div>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const status = (text, cls) => { const el = $("status"); el.textContent = text; el.className = cls || "muted"; };
+  const term = new Terminal({ cursorBlink: true, fontFamily: "Menlo, Consolas, monospace", fontSize: 14, scrollback: 5000,
+                              theme: { background: "#0b0e14" } });
+  const fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open($("term"));
+  fit.fit();
+  const enc = new TextEncoder();
+  let session = null, ws = null;
+
+  const api = async (method, path, token) => {
+    const r = await fetch(path, { method, headers: token ? { Authorization: "Bearer " + token } : {} });
+    const body = await r.json().catch(() => ({}));
+    return { status: r.status, body };
+  };
+
+  async function refreshPool() {
+    try {
+      const { body } = await api("GET", "/pool");
+      $("pool").textContent = `pool ${body.active}/${body.capacity} · queue ${body.queue} · warm ${body.warm}` + (body.fault !== "none" ? ` · fault=${body.fault}` : "");
+    } catch (e) { /* ignore */ }
+  }
+
+  async function newSandbox() {
+    $("new").disabled = true;
+    term.reset();
+    if (ws) { try { ws.close(); } catch (e) {} ws = null; }
+    status("creating session…");
+    const created = await api("POST", "/sessions");
+    if (created.status !== 201) { status("could not create session (" + created.status + ")", "bad"); $("new").disabled = false; return; }
+    session = created.body;
+    status("requesting sandbox… (queues if the pool is full)", "warn");
+    const t0 = performance.now();
+    const r = await api("POST", `/sessions/${session.session_id}/sandbox`, session.token);
+    const total = Math.round(performance.now() - t0);
+    if (r.status !== 200) {
+      status(`no sandbox: ${r.body.error || r.status}` + (r.body.waited_ms ? ` after ${(r.body.waited_ms / 1000).toFixed(0)} s in queue` : ""), "bad");
+      $("new").disabled = false; return;
+    }
+    status(`sandbox ready · ${r.body.source} · spawn ${r.body.spawn_ms} ms · queue ${r.body.queue_ms} ms · total ${total} ms`, "ok");
+    attach();
+  }
+
+  function attach() {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    ws = new WebSocket(`${proto}://${location.host}/ws/${session.session_id}?token=${encodeURIComponent(session.token)}&cols=${term.cols}&rows=${term.rows}`);
+    ws.binaryType = "arraybuffer";
+    ws.onopen = () => { term.focus(); $("new").disabled = false; };
+    ws.onmessage = (ev) => {
+      if (typeof ev.data === "string") {
+        const m = JSON.parse(ev.data);
+        if (m.type === "exit") { status("shell exited — sandbox destroyed. Click New sandbox.", "warn"); term.write("\r\n\x1b[33m[sandbox destroyed]\x1b[0m\r\n"); }
+        return;
+      }
+      term.write(new Uint8Array(ev.data));
+    };
+    ws.onclose = (ev) => { if (ev.code >= 4400) status(`websocket refused (${ev.code})`, "bad"); else if (!/destroyed/.test($("status").textContent)) status("disconnected", "warn"); ws = null; };
+    ws.onerror = () => status("websocket error", "bad");
+  }
+
+  term.onData((d) => { if (ws && ws.readyState === 1) ws.send(enc.encode(d)); });
+  term.onResize(({ cols, rows }) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "resize", cols, rows })); });
+  window.addEventListener("resize", () => fit.fit());
+  $("new").addEventListener("click", newSandbox);
+  term.writeln("\x1b[1mtermlab\x1b[0m — click \x1b[1mNew sandbox\x1b[0m to get a throwaway Linux box (0.5 CPU, 256 MB, no network).");
+  term.writeln("Metrics: /metrics · Grafana: http://localhost:3000 · Kibana: http://localhost:5601");
+  refreshPool(); setInterval(refreshPool, 3000);
+  status("ready");
+})();
+</script>
+</body>
+</html>
