@@ -3,7 +3,8 @@
 # Why autodiscover (docker provider) rather than a plain `container` input on
 # /var/lib/docker/containers/*/*.log: autodiscover watches the Docker API, so it only
 # tails the container named termlab-api (not Prometheus/Grafana/ES noise, and never the
-# user sandboxes - those are created with log driver `none` anyway), and it
+# user sandboxes - their PID 1 is `sleep` and shell output goes to the WebSocket, not the
+# container log, so there is nothing to ship), and it
 # follows the container across restarts/re-creations when the container ID changes.
 # Both /var/lib/docker/containers (the json-file log files) and /var/run/docker.sock
 # (container metadata) are mounted read-only from the Docker host.
