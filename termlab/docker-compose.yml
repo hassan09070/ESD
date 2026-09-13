@@ -1,0 +1,201 @@
+# termlab stack: control plane (api) + sandbox image build + metrics (Prometheus, Grafana,
+# Node Exporter) + logs (Filebeat, Elasticsearch, Kibana) + a one-shot `setup` job that
+# installs the ILM policy, index template and Kibana data view.
+#
+# Named volumes hold state that must survive `docker compose down` (but not `down -v`):
+#   prom_data          Prometheus TSDB (7d retention)
+#   grafana_data       Grafana users/prefs (dashboards themselves are provisioned from files)
+#   es_data            Elasticsearch indices (termlab-logs-* deleted by ILM after 7d)
+#   filebeat_registry  Filebeat's read offsets, so a restart does not re-ship old lines
+# The api's own stdout is kept by Docker's json-file driver (max 3 x 10 MB per container,
+# under /var/lib/docker/containers/<id>/); those files are removed with the container.
+#
+# User sandboxes are NOT compose services: the api creates them through the mounted Docker
+# socket (label termlab.sandbox=1). `docker compose down` therefore does not remove them -
+# the api removes its own on shutdown, and scripts/cleanup.sh removes any leftovers.
+services:
+  # Builds the sandbox image once and exits; the api waits for it so the first user never
+  # pays for an image build.
+  sandbox-image:
+    build: ./sandbox
+    image: termlab-sandbox:local
+    container_name: termlab-sandbox-image
+    command: ["true"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: termlab-api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      TERMLAB_FAULT: ${TERMLAB_FAULT:-none}
+      TERMLAB_DEMO_CARDINALITY: ${TERMLAB_DEMO_CARDINALITY:-0}
+      TERMLAB_POOL_SIZE: ${TERMLAB_POOL_SIZE:-10}
+      TERMLAB_WARM_POOL_SIZE: ${TERMLAB_WARM_POOL_SIZE:-2}
+      TERMLAB_IDLE_TIMEOUT_S: ${TERMLAB_IDLE_TIMEOUT_S:-900}
+      TERMLAB_QUEUE_TIMEOUT_S: ${TERMLAB_QUEUE_TIMEOUT_S:-60}
+      TERMLAB_HOG_COUNT: ${TERMLAB_HOG_COUNT:-4}
+      TERMLAB_SANDBOX_IMAGE: termlab-sandbox:local
+    volumes:
+      # The api is the only component that talks to the Docker daemon. This socket makes the
+      # container root-equivalent on the Docker host: acceptable for a local classroom stack,
+      # not for a public deployment (use a socket proxy or a separate host there).
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8000:8000"
+    depends_on:
+      sandbox-image:
+        condition: service_completed_successfully
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: termlab-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+      - node-exporter
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: termlab-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # Node Exporter measures the kernel it runs on. On Docker Desktop (macOS/Windows) that is
+  # the Docker Linux VM, and the host root cannot be bind-mounted with rslave, so the default
+  # config mounts nothing. On a real Linux host add the host mounts with:
+  #   docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: termlab-node-exporter
+    pid: host
+    uts: host        # report the real kernel hostname in node_uname_info{nodename}
+    command:
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+      # default list minus "overlay" so the container's / (backed by the VM disk) is reported
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$$
+    ports:
+      - "9100:9100"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    container_name: termlab-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.ml.enabled: "false"
+      ES_JAVA_OPTS: "-Xms768m -Xmx768m"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+    deploy:
+      resources:
+        limits:
+          memory: 1500m
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.18.0
+    container_name: termlab-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      TELEMETRY_ENABLED: "false"
+      XPACK_SECURITY_ENCRYPTIONKEY: termlab-local-only-key-not-for-production-use
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: termlab-local-only-key-not-for-production-use
+      XPACK_REPORTING_ENCRYPTIONKEY: termlab-local-only-key-not-for-production-use
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status | grep -q '\"level\":\"available\"' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 40s
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.18.0
+    container_name: termlab-filebeat
+    user: root
+    command: ["filebeat", "-e", "--strict.perms=false"]
+    volumes:
+      - ./monitoring/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - filebeat_registry:/usr/share/filebeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+
+  # One-shot: ILM policy + index template + Kibana data view. Exits 0 when done.
+  setup:
+    image: curlimages/curl:8.14.1
+    container_name: termlab-setup
+    entrypoint: ["/bin/sh", "/setup/setup_elastic.sh"]
+    environment:
+      ES_URL: http://elasticsearch:9200
+      KIBANA_URL: http://kibana:5601
+      ILM_POLICY_FILE: /setup/ilm_policy.json
+      INDEX_TEMPLATE_FILE: /setup/index_template.json
+    volumes:
+      - ./scripts/setup_elastic.sh:/setup/setup_elastic.sh:ro
+      - ./monitoring/elasticsearch/ilm_policy.json:/setup/ilm_policy.json:ro
+      - ./monitoring/elasticsearch/index_template.json:/setup/index_template.json:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+
+volumes:
+  prom_data:
+  grafana_data:
+  es_data:
+  filebeat_registry:

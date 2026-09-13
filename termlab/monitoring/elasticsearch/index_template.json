@@ -1,0 +1,62 @@
+{
+  "_comment": "Index template for termlab-logs-*: attaches the ILM policy, 0 replicas (single node), and explicit keyword/number mappings for the fields our KQL searches use. Unknown fields are still mapped dynamically.",
+  "index_patterns": ["termlab-logs-*"],
+  "priority": 500,
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "termlab-logs-policy",
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "5s"
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": {"type": "date"},
+        "ts": {"type": "date"},
+        "level": {"type": "keyword"},
+        "service": {"type": "keyword"},
+        "event": {"type": "keyword"},
+        "msg": {"type": "text"},
+        "message": {"type": "text"},
+        "request_id": {"type": "keyword"},
+        "session_id": {"type": "keyword"},
+        "user_id": {"type": "keyword"},
+        "sandbox_id": {"type": "keyword"},
+        "source": {"type": "keyword"},
+        "reason": {"type": "keyword"},
+        "outcome": {"type": "keyword"},
+        "state": {"type": "keyword"},
+        "action": {"type": "keyword"},
+        "status": {"type": "keyword"},
+        "status_code": {"type": "integer"},
+        "method": {"type": "keyword"},
+        "path": {"type": "keyword"},
+        "route": {"type": "keyword"},
+        "fault_mode": {"type": "keyword"},
+        "image": {"type": "keyword"},
+        "duration_ms": {"type": "long"},
+        "spawn_ms": {"type": "long"},
+        "queue_ms": {"type": "long"},
+        "waited_ms": {"type": "long"},
+        "cold_delay_ms": {"type": "long"},
+        "lifetime_s": {"type": "float"},
+        "bytes_in": {"type": "long"},
+        "bytes_out": {"type": "long"},
+        "commands": {"type": "integer"},
+        "cols": {"type": "integer"},
+        "rows": {"type": "integer"},
+        "ws_count": {"type": "integer"},
+        "pool_free": {"type": "integer"},
+        "pool_capacity": {"type": "integer"},
+        "queue_length": {"type": "integer"},
+        "size": {"type": "integer"},
+        "removed": {"type": "integer"},
+        "hogs": {"type": "integer"},
+        "exc_type": {"type": "keyword"},
+        "exc_message": {"type": "text"},
+        "container": {"properties": {"id": {"type": "keyword"}, "name": {"type": "keyword"}}}
+      }
+    }
+  }
+}
