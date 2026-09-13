@@ -13,6 +13,10 @@ from collections import deque
 from api import metrics
 
 
+class QueueCancelled(Exception):
+    """The waiting session was destroyed (DELETE / reap) before a slot came free."""
+
+
 class QueueTimeout(Exception):
     def __init__(self, waited_s: float, immediate: bool):
         super().__init__(f"no sandbox slot after {waited_s:.1f}s")
@@ -35,8 +39,9 @@ class Pool:
         metrics.POOL_FREE.set(self.free)
         metrics.QUEUE_LENGTH.set(len(self.waiters))
 
-    async def acquire(self, timeout: float) -> float:
-        """Take a slot; returns seconds waited. Raises QueueTimeout."""
+    async def acquire(self, timeout: float, register=None) -> float:
+        """Take a slot; returns seconds waited. Raises QueueTimeout, or QueueCancelled if the
+        caller cancelled the future it received through `register` (see `cancel`)."""
         if self.free > 0 and not self.waiters:
             self.free -= 1
             self._publish()
@@ -47,9 +52,18 @@ class Pool:
         fut = asyncio.get_running_loop().create_future()
         self.waiters.append(fut)
         self._publish()
+        if register is not None:
+            register(fut)
         t0 = time.monotonic()
         try:
             await asyncio.wait_for(fut, timeout)
+        except QueueCancelled:
+            try:
+                self.waiters.remove(fut)
+            except ValueError:
+                pass
+            self._publish()
+            raise
         except asyncio.TimeoutError:
             if fut.done() and not fut.cancelled():
                 pass                                    # slot was handed over in the same tick
@@ -64,6 +78,22 @@ class Pool:
         metrics.QUEUE_WAIT.observe(waited)
         self._publish()
         return waited
+
+    def position(self, fut: asyncio.Future | None) -> int | None:
+        """1-based place in the queue, or None if not waiting."""
+        if fut is None:
+            return None
+        try:
+            return list(self.waiters).index(fut) + 1
+        except ValueError:
+            return None
+
+    @staticmethod
+    def cancel(fut: asyncio.Future | None) -> bool:
+        if fut is not None and not fut.done():
+            fut.set_exception(QueueCancelled())
+            return True
+        return False
 
     def release(self) -> None:
         """Hand the slot straight to the oldest live waiter, else return it to `free`."""

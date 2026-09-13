@@ -177,3 +177,22 @@ async def test_stats_tick_aggregates_without_per_container_labels(manager, fake)
     assert REGISTRY.get_sample_value("termlab_stats_sample_seconds_count") >= 2
     body, _ = __import__("api.metrics", fromlist=["render"]).render()
     assert b"container" not in body.split(b"termlab_sandbox_cpu_cores_sum")[1][:80]
+
+
+async def test_delete_while_queued_cancels_the_wait_and_reports_position(manager, settings):
+    sessions = [manager.create_session() for _ in range(settings.pool_size + 2)]
+    for s in sessions[:settings.pool_size]:
+        await manager.request_sandbox(s)
+    q1, q2 = sessions[-2], sessions[-1]
+    w1 = asyncio.create_task(manager.request_sandbox(q1))
+    w2 = asyncio.create_task(manager.request_sandbox(q2))
+    await asyncio.sleep(0.02)
+    assert manager.describe(q1)["queue_position"] == 1 and manager.describe(q2)["queue_position"] == 2
+    assert await manager.reap(q1, "user_exit") is True             # user gave up (DELETE) while queued
+    with pytest.raises(SessionError) as e:
+        await w1
+    assert e.value.status == 409 and e.value.error == "cancelled" and q1.state == State.reaped
+    assert manager.describe(q2)["queue_position"] == 1 and manager.pool_status()["queue"] == 1
+    await manager.reap(sessions[0], "user_exit")                    # a slot frees -> q2 gets it
+    r = await w2
+    assert r.queue_ms >= 0 and q2.state == State.running and manager.describe(q2)["queue_position"] is None

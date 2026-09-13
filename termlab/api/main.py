@@ -156,7 +156,7 @@ def create_app(settings: Settings | None = None, backend: DockerBackend | None =
     def get_session(session_id: str, request: Request, response: Response) -> dict:
         s = authed(request, session_id)
         response.headers["X-Session-ID"] = s.session_id
-        return s.public(request.app.state.manager.clock())
+        return request.app.state.manager.describe(s)
 
     @app.post("/sessions/{session_id}/sandbox")
     async def request_sandbox(session_id: str, request: Request, response: Response) -> dict:

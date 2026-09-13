@@ -25,7 +25,7 @@ from api import metrics
 from api.config import Settings
 from api.docker_client import SESSION_LABEL, DockerBackend, Sandbox, StatsSample, new_name
 from api.faults import Fault, start_hogs, stop_hogs
-from api.pool import Pool, QueueTimeout
+from api.pool import Pool, QueueCancelled, QueueTimeout
 from api.warm_pool import WarmPool
 
 log = structlog.get_logger()
@@ -80,13 +80,15 @@ class Session:
     commands: int = 0
     reap_reason: str | None = None
     _reaping: bool = field(default=False, repr=False)
+    _waiter: asyncio.Future | None = field(default=None, repr=False)
 
     @property
     def user_id(self) -> str:             # anonymous: the session *is* the user
         return self.session_id
 
-    def public(self, now: float) -> dict:
+    def public(self, now: float, queue_position: int | None = None) -> dict:
         return {
+            "queue_position": queue_position,
             "session_id": self.session_id, "state": self.state.value, "source": self.spawn_source,
             "sandbox_id": self.sandbox.short_id if self.sandbox else None,
             "uptime_s": round(now - self.sandbox_started, 1) if self.sandbox_started else None,
@@ -198,14 +200,20 @@ class SessionManager:
         self._transition(s, State.queued)
         t_queue = time.perf_counter()
         try:
-            waited = await self.pool.acquire(self.settings.queue_timeout_s)
+            waited = await self.pool.acquire(self.settings.queue_timeout_s, register=lambda f: setattr(s, "_waiter", f))
+        except QueueCancelled:
+            s._waiter = None
+            log.info("queue_cancelled", msg="sandbox request cancelled while queued", session_id=s.session_id, user_id=s.user_id)
+            raise SessionError(409, "cancelled", state=s.state.value) from None
         except QueueTimeout as e:
+            s._waiter = None
             outcome = "pool_full" if e.immediate else "queued_timeout"
             metrics.SESSIONS_STARTED.labels(outcome=outcome).inc()
             self._transition(s, State.created)
             log.warning("limit_hit", msg=f"no sandbox slot ({outcome})", session_id=s.session_id, user_id=s.user_id, outcome=outcome,
                         waited_ms=int(e.waited_s * 1000), pool_capacity=self.pool.capacity, queue_length=len(self.pool.waiters))
             raise SessionError(503, outcome, waited_ms=int(e.waited_s * 1000)) from None
+        s._waiter = None
         queue_ms = int(waited * 1000)
         log.log(30 if waited > 5 else 20, "queue_wait", msg=f"slot acquired after {queue_ms} ms", session_id=s.session_id,
                 queue_ms=queue_ms, queue_length=len(self.pool.waiters), pool_free=self.pool.free)
@@ -260,6 +268,8 @@ class SessionManager:
         if s._reaping or s.state == State.reaped:
             return False
         s._reaping = True
+        if s.state == State.queued:
+            self.pool.cancel(s._waiter)          # the waiting request_sandbox() raises QueueCancelled
         sb = s.sandbox
         try:
             if sb is not None:
@@ -317,6 +327,9 @@ class SessionManager:
         metrics.SANDBOX_MEM_MAX.set(max(mems, default=0))
         metrics.STATS_SAMPLE_SECONDS.observe(time.perf_counter() - t0)
         log.debug("stats_sample", msg="resource sample", n=len(sandboxes), duration_ms=int((time.perf_counter() - t0) * 1000))
+
+    def describe(self, s: Session) -> dict:
+        return s.public(self.clock(), queue_position=self.pool.position(s._waiter))
 
     def pool_status(self) -> dict:
         return {"capacity": self.pool.capacity, "active": self.pool.active, "free": self.pool.free,

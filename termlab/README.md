@@ -39,7 +39,7 @@ On Linux, add the host mounts for Node Exporter so it measures the real machine:
 
 ## Use
 
-Open http://localhost:8000, click **New sandbox**, type. The header shows where the sandbox came from (`warm` = pre-created, `cold` = created on demand), how long it took, and the pool state (`pool 3/10 · queue 0 · warm 2`). Try:
+Open http://localhost:8000, click **New sandbox**, type. The header shows where the sandbox came from (`warm` = pre-created, `cold` = created on demand), how long it took, and the pool fill; the sidebar shows live session stats and one-click demo commands. Reloading the page reattaches to your sandbox; **New sandbox** destroys the previous one first (one sandbox per person — ten clicks do not take ten slots); **Destroy** ends it, and also cancels a request that is still waiting in the queue. Try:
 
 ```sh
 htop                      # 0.5 CPU, 256 MiB - watch the limits
