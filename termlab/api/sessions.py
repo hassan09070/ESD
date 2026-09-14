@@ -232,6 +232,14 @@ class SessionManager:
                       exc_type=type(e).__name__, exc_message=str(e)[:200], exc_info=True)
             raise SessionError(500, "spawn_failed", exc_type=type(e).__name__) from e
         spawn_s = time.perf_counter() - t0
+        if s.state == State.reaped:
+            # DELETE arrived while the container was being created (Destroy pressed mid-spawn):
+            # reap() could not remove what did not exist yet, so give the slot and container back here.
+            await asyncio.to_thread(self.backend.remove, sb)
+            self.pool.release()
+            log.info("queue_cancelled", msg="sandbox request cancelled while spawning", session_id=s.session_id, user_id=s.user_id,
+                     source=source, spawn_ms=int(spawn_s * 1000))
+            raise SessionError(409, "cancelled", state=s.state.value)
         metrics.SANDBOX_SPAWN.labels(source=source).observe(spawn_s)
         s.sandbox, s.spawn_source, s.sandbox_started = sb, source, self.clock()
         self.touch(s)

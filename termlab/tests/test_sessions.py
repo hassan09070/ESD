@@ -3,6 +3,7 @@ import asyncio
 import pytest
 from prometheus_client import REGISTRY
 
+from api.config import Settings
 from api.docker_client import SANDBOX_LABEL, Sandbox
 from api.sessions import IllegalTransition, SessionError, State
 
@@ -196,3 +197,23 @@ async def test_delete_while_queued_cancels_the_wait_and_reports_position(manager
     await manager.reap(sessions[0], "user_exit")                    # a slot frees -> q2 gets it
     r = await w2
     assert r.queue_ms >= 0 and q2.state == State.running and manager.describe(q2)["queue_position"] is None
+
+
+async def test_delete_while_spawning_returns_slot_and_container(settings, fake, clock):
+    from api.docker_client import FakeDocker
+    from api.sessions import SessionManager
+
+    slow = FakeDocker(spawn_delay=0.2)
+    m = SessionManager(Settings(pool_size=1, warm_pool_size=0, queue_timeout_s=0.3), slow, clock=clock)
+    await m.startup()
+    s = m.create_session()
+    task = asyncio.create_task(m.request_sandbox(s))
+    await asyncio.sleep(0.05)
+    assert s.state == State.spawning
+    assert await m.reap(s, "user_exit") is True            # Destroy pressed while docker create is in flight
+    with pytest.raises(SessionError) as e:
+        await task
+    assert e.value.status == 409 and e.value.error == "cancelled"
+    assert s.state == State.reaped and s.sandbox is None
+    assert m.pool.free == m.pool.capacity and not slow.containers   # nothing leaked
+    await m.shutdown()

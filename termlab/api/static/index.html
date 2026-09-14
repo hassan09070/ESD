@@ -42,6 +42,7 @@
   button { font: 600 13px var(--sans); color: #fff; border: 0; border-radius: 10px; padding: 9px 15px; cursor: pointer; transition: transform .08s, filter .15s, opacity .15s; }
   button:active { transform: translateY(1px); }
   button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
   .btn-primary { background: linear-gradient(135deg, var(--accent), #5b3df5); box-shadow: 0 6px 18px rgba(124, 92, 255, .35); }
   .btn-primary:not(:disabled):hover { filter: brightness(1.12); }
   .btn-ghost { background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--text); }
@@ -59,7 +60,7 @@
   .tag.warm { background: rgba(52, 211, 153, .15); color: var(--ok); } .tag.cold { background: rgba(34, 211, 238, .15); color: var(--accent2); }
   .tag.state { background: rgba(124, 92, 255, .18); color: #b8a8ff; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { font: 500 11.5px var(--mono); padding: 6px 9px; border-radius: 8px; background: rgba(255,255,255,.05); border: 1px solid var(--line); color: var(--text); cursor: pointer; }
+  .chip { font: 500 11.5px var(--mono); padding: 6px 9px; border-radius: 8px; background: rgba(255,255,255,.05); border: 1px solid var(--line); color: var(--text); cursor: pointer; text-align: left; }
   .chip:hover { border-color: var(--accent); background: rgba(124, 92, 255, .14); }
   .chip small { display: block; color: var(--muted); font-family: var(--sans); font-size: 10.5px; margin-top: 2px; }
   .limits { list-style: none; margin: 0; padding: 0; font-size: 12.5px; color: var(--muted); display: grid; gap: 5px; }
@@ -74,16 +75,22 @@
   .empty div { pointer-events: auto; background: rgba(10, 14, 23, .8); padding: 28px 34px; border-radius: 16px; border: 1px solid var(--line); backdrop-filter: blur(6px); max-width: 460px; }
   .empty h2 { margin: 0 0 8px; font-size: 22px; } .empty p { margin: 0 0 16px; color: var(--muted); }
   kbd { font: 11px var(--mono); background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
-  @media (max-width: 860px) { .app { grid-template-columns: 1fr; } aside { display: none; } .pool { display: none; } }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    header { flex-wrap: wrap; padding: 10px 12px; row-gap: 8px; }
+    .pill { max-width: 100%; }
+    aside { display: none; } .pool { display: none; }
+    .empty div { max-width: calc(100% - 24px); padding: 20px 18px; } .empty h2 { font-size: 18px; }
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="logo"><span class="mark">&gt;_</span>termlab</div>
-    <span id="status" class="pill"><span class="dot"></span><span id="status-text">connecting…</span></span>
+    <span id="status" class="pill" role="status" aria-live="polite"><span class="dot"></span><span id="status-text">connecting…</span></span>
     <span class="spacer"></span>
-    <div class="pool" title="running sandboxes / pool capacity"><span id="pool-text">pool –</span><div class="bar" id="pool-bar"><i></i></div></div>
+    <div class="pool" title="running sandboxes / pool capacity" aria-label="running sandboxes out of pool capacity"><span id="pool-text">pool –</span><div class="bar" id="pool-bar" aria-hidden="true"><i></i></div></div>
     <button id="destroy" class="btn-ghost" disabled>Destroy</button>
     <button id="new" class="btn-primary">New sandbox</button>
   </header>
@@ -113,13 +120,13 @@
     <div class="card">
       <h3>Try it</h3>
       <div class="chips" id="chips">
-        <span class="chip" data-cmd="htop">htop<small>see the 0.5 CPU / 256 MiB caps</small></span>
-        <span class="chip" data-cmd="stress-ng --cpu 4 --timeout 20s">stress-ng --cpu 4<small>peg your core, watch Grafana</small></span>
-        <span class="chip" data-cmd="python3 -c 'x = bytearray(300 * 2**20)'">allocate 300 MiB<small>OOM-killed → reaped, reason=oom</small></span>
-        <span class="chip" data-cmd="touch /etc/x">touch /etc/x<small>read-only rootfs</small></span>
-        <span class="chip" data-cmd="python3 -c 'import urllib.request as u; u.urlopen(&quot;http://example.com&quot;, timeout=2)'">reach the internet<small>no network</small></span>
-        <span class="chip" data-cmd="head -c 2000000 /dev/urandom | base64 | wc -c">2 MB of output<small>bytes/s panel</small></span>
-        <span class="chip" data-cmd="exit">exit<small>destroys the sandbox</small></span>
+        <button type="button" class="chip" data-cmd="htop">htop<small>see the 0.5 CPU / 256 MiB caps</small></button>
+        <button type="button" class="chip" data-cmd="stress-ng --cpu 4 --timeout 20s">stress-ng --cpu 4<small>peg your core, watch Grafana</small></button>
+        <button type="button" class="chip" data-cmd="python3 -c 'x = bytearray(300 * 2**20)'">allocate 300 MiB<small>OOM-killed → reaped, reason=oom</small></button>
+        <button type="button" class="chip" data-cmd="touch /etc/x">touch /etc/x<small>read-only rootfs</small></button>
+        <button type="button" class="chip" data-cmd="python3 -c 'import urllib.request as u; u.urlopen(&quot;http://example.com&quot;, timeout=2)'">reach the internet<small>no network</small></button>
+        <button type="button" class="chip" data-cmd="head -c 2000000 /dev/urandom | base64 | wc -c">2 MB of output<small>bytes/s panel</small></button>
+        <button type="button" class="chip" data-cmd="exit">exit<small>destroys the sandbox</small></button>
       </div>
     </div>
     <div class="card">
@@ -175,7 +182,8 @@
   const fmtMs = (ms) => ms == null ? "–" : ms < 1000 ? ms + " ms" : (ms / 1000).toFixed(2) + " s";
   const fmtB = (b) => b == null ? "–" : b < 1024 ? b + " B" : b < 1048576 ? (b / 1024).toFixed(1) + " KB" : (b / 1048576).toFixed(1) + " MB";
   const fmtUp = (s) => { s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60); return m ? `${m}m ${String(s % 60).padStart(2, "0")}s` : `${s}s`; };
-  const setButtons = () => { $("new").disabled = $("new2").disabled = busy; $("destroy").disabled = busy || !session; $("empty").hidden = !!(session && info && info.sandbox_id); };
+  // Destroy stays enabled while a request is queued or spawning: DELETE cancels it server-side.
+  const setButtons = () => { $("new").disabled = $("new2").disabled = busy; $("destroy").disabled = !session; $("empty").hidden = !!(session && info && info.sandbox_id); };
 
   function renderInfo(spawn) {
     const i = info || {};
@@ -214,11 +222,14 @@
   // ---------- sandbox lifecycle
   async function destroyCurrent(quiet) {
     if (!session) return;
-    const s = session;
+    const s = session, hadSandbox = !!(info && info.sandbox_id);
     if (ws) { try { ws.close(); } catch (e) {} ws = null; }
-    await api("DELETE", `/sessions/${s.session_id}`, s.token);      // also cancels a queued request
+    await api("DELETE", `/sessions/${s.session_id}`, s.token);      // also cancels a queued or in-flight request
     session = null; info = null; save();
-    if (!quiet) { term.write("\r\n\x1b[33m[sandbox destroyed]\x1b[0m\r\n"); status("sandbox destroyed", "warn"); }
+    if (!quiet) {
+      if (hadSandbox) { term.write("\r\n\x1b[33m[sandbox destroyed]\x1b[0m\r\n"); status("sandbox destroyed", "warn"); }
+      else status("request cancelled", "warn");
+    }
     renderInfo(); refreshPool();
   }
 
@@ -242,6 +253,7 @@
       const r = await api("POST", `/sessions/${session.session_id}/sandbox`, session.token);
       clearInterval(pollTimer); pollTimer = null;
       if (r.status !== 200) {
+        if (r.body.error === "cancelled") { status("request cancelled", "warn"); return; }   // user pressed Destroy while waiting
         const why = r.body.error === "queued_timeout" ? `no free sandbox after ${(r.body.waited_ms / 1000).toFixed(0)} s in the queue — try again` : (r.body.error || "HTTP " + r.status);
         status(why, "bad"); toast(why, "bad", 6000); await destroyCurrent(true); return;
       }
@@ -265,11 +277,16 @@
       }
       term.write(new Uint8Array(ev.data));
     };
-    ws.onclose = (ev) => {
+    ws.onclose = async (ev) => {
       ws = null; clearInterval(uptimeTimer); uptimeTimer = null;
       if (ev.code === 4409) { status("that sandbox is gone", "warn"); session = null; save(); renderInfo(); }
       else if (ev.code >= 4400) status(`connection refused (${ev.code})`, "bad");
-      else if (session) status("disconnected — reload to reattach", "warn");
+      else if (session) {
+        const r = await api("GET", `/sessions/${session.session_id}`, session.token);   // did the server restart?
+        if (r.status === 404) forget("server restarted — your sandbox is gone, start a new one");
+        else if (r.status === 200 && !r.body.sandbox_id) forget(`sandbox ended (${r.body.reap_reason || "reaped"})`);
+        else status("disconnected — reload to reattach", "warn");
+      }
     };
     ws.onerror = () => status("websocket error", "bad");
   }
@@ -284,7 +301,12 @@
       status(`reattached to your sandbox (${fmtUp(r.body.uptime_s)} old)`, "ok");
       term.writeln("\x1b[90m[reattached — new shell in the same sandbox]\x1b[0m");
       attach();
-    } else { session = null; save(); status("ready"); renderInfo(); }
+    } else {
+      // A session without a sandbox is a request this page abandoned (reload while queued):
+      // cancel it, otherwise it would still take a slot when its turn came.
+      if (r.status === 200) await api("DELETE", `/sessions/${session.session_id}`, session.token);
+      session = null; save(); status("ready"); renderInfo();
+    }
   }
 
   // ---------- wiring
@@ -300,7 +322,12 @@
     ws.send(enc.encode(chip.dataset.cmd + "\r")); term.focus();
   });
   window.addEventListener("keydown", (e) => { if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "n") { e.preventDefault(); newSandbox(); } });
-  window.addEventListener("beforeunload", () => save());
+  window.addEventListener("beforeunload", () => {
+    save();
+    if (session && !(info && info.sandbox_id)) {   // leaving while queued/spawning: cancel, do not leak a slot
+      try { fetch(`/sessions/${session.session_id}`, { method: "DELETE", keepalive: true, headers: { Authorization: "Bearer " + session.token } }); } catch (e) {}
+    }
+  });
   refreshPool(); setInterval(refreshPool, 3000);
   renderInfo();
   resume();
