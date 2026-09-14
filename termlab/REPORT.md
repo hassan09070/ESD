@@ -2,7 +2,7 @@
 
 Enterprise Software Development, Fall 2026 — Assignment 1. Individual submission.
 
-Code, compose stack, dashboards, scripts and raw results are in this directory (`README.md` explains how to run everything; `docs/architecture.md` has the full failure analysis). Screenshots referenced as `[SCREENSHOT: …]` are in `docs/screenshots/`.
+Code, compose stack, dashboards, scripts and raw results are in this directory (`README.md` explains how to run everything; `docs/architecture.md` has the full failure analysis). Screenshots are in `docs/screenshots/` (`docs/screenshots/README.md` says which panel, time range and query each one shows).
 
 ---
 
@@ -72,7 +72,7 @@ Counts: 8 Counters, 9 Gauges, 5 Histograms, 2 Summaries — all four types, acro
 | Stats sampler mean (Summary) | `rate(termlab_stats_sample_seconds_sum[5m]) / rate(termlab_stats_sample_seconds_count[5m])` | daemon responsiveness |
 | Build info | `termlab_build_info` | fault mode in effect |
 
-`[SCREENSHOT: application dashboard during the smoke load]`
+![Application dashboard during the smoke load (2026-09-13 13:44–13:45 UTC)](docs/screenshots/b2_app_dashboard_smoke.png)
 
 ### B.3 Dashboard: termlab / Business (`termlab_business.json`)
 
@@ -88,7 +88,7 @@ Counts: 8 Counters, 9 Gauges, 5 Histograms, 2 Summaries — all four types, acro
 | Average session duration (Summary) | `rate(termlab_session_duration_seconds_sum[10m]) / clamp_min(rate(…_count[10m]), 1e-9)` | mean lifetime of reaped sandboxes |
 | Commands per minute | `sum(rate(termlab_commands_total[5m])) * 60` | how actively boxes are used |
 
-`[SCREENSHOT: business dashboard during the queue demo (14 users, pool 10)]`
+![Business dashboard during the queue demo: 14 users on a pool of 10, four of them queued ~26 s (2026-09-13 13:45–13:46 UTC)](docs/screenshots/b3_business_dashboard_queue_demo.png)
 
 ### B.4 p95 / p99 and the time window
 
@@ -103,11 +103,15 @@ The experiment stages are ≥ 120 s so every `[1m]` panel is fully inside a stag
 
 The lab's RED metrics describe request/response services; a terminal has no requests. What a user feels is *typing lag*. The bridge records the time from forwarding a stdin chunk to the PTY until the next output chunk arrives (normally the echo), one probe at a time, discarding probes older than 2 s (the user may be inside `cat` with echo off). It is a lower bound when a program prints on its own (`top`), so the load generator also measures it client-side (echo of the command line) and the two agree to within a few ms.
 
-It is the metric that separates the two faults: **cold_start moves spawn latency and leaves roundtrip flat; cpu_hog leaves spawn mostly alone and moves roundtrip** (E.1). Baseline on this laptop: p50 ≈ 5 ms, p95 ≈ 15–20 ms, p99 ≈ 25–50 ms. `[SCREENSHOT: roundtrip panel across the cpu_hog stages]`
+It is the metric that separates the two faults: **cold_start moves spawn latency and leaves roundtrip flat; cpu_hog leaves spawn mostly alone and moves roundtrip** (E.1). Baseline on this laptop: p50 ≈ 5 ms, p95 ≈ 15–20 ms, p99 ≈ 25–50 ms. 
+
+![Terminal roundtrip p50/p95/p99 across the three cpu_hog stages (2026-09-13 14:04–14:12 UTC)](docs/screenshots/b5_roundtrip_cpu_hog.png)
 
 ### B.6 Node Exporter
 
-`prom/node-exporter:v1.9.1` runs with `pid: host` and `uts: host` and is scraped as job `node`. **Machine measured:** `node_uname_info{nodename="docker-desktop", release="6.12.54-linuxkit"}` — the Docker Desktop Linux VM, not macOS. That is the honest choice: every sandbox (and the cpu_hog stressors) runs inside this VM, so its CPU/memory panels show what the sandboxes do to the host. The **termlab / Node Exporter (machine)** dashboard has CPU busy %, memory used, root filesystem, network rx/tx, load average. On a Linux host `docker-compose.linux.yml` mounts `/` so the real machine is measured instead. `[SCREENSHOT: node dashboard during cpu_hog]`
+`prom/node-exporter:v1.9.1` runs with `pid: host` and `uts: host` and is scraped as job `node`. **Machine measured:** `node_uname_info{nodename="docker-desktop", release="6.12.54-linuxkit"}` — the Docker Desktop Linux VM, not macOS. That is the honest choice: every sandbox (and the cpu_hog stressors) runs inside this VM, so its CPU/memory panels show what the sandboxes do to the host. The **termlab / Node Exporter (machine)** dashboard has CPU busy %, memory used, root filesystem, network rx/tx, load average. On a Linux host `docker-compose.linux.yml` mounts `/` so the real machine is measured instead. 
+
+![Node Exporter dashboard during cpu_hog: CPU busy pinned at 100 %, load1 up to 35 (2026-09-13 14:04–14:12 UTC)](docs/screenshots/b6_node_dashboard_cpu_hog.png)
 
 ---
 
@@ -187,7 +191,7 @@ Working searches (Kibana → Discover → **termlab logs**; full list in `script
 - Find an error: `level : "error"`; slow spawns: `event : "sandbox_spawn" and spawn_ms > 2000`; users turned away: `event : "limit_hit"`.
 - Shell equivalent: `curl --get 'localhost:9200/termlab-logs-*/_count' --data-urlencode 'q=event:"sandbox_spawn" AND spawn_ms:>2000'`.
 
-`[SCREENSHOT: Kibana Discover, session_id trace of one user, columns event/source/spawn_ms/queue_ms/reason]`
+![Kibana Discover: every line of session 386ed51a5c39, columns event / source / spawn_ms / queue_ms / reason](docs/screenshots/c4_kibana_session_trace.png)
 
 ---
 
@@ -204,14 +208,20 @@ See `docs/architecture.md` for the Mermaid diagram, the per-component table (rol
 - **Pull metrics, push logs.** Prometheus scrapes `/metrics` every 5 s (7-day TSDB); Filebeat tails Docker's json-file and pushes to ES (daily indices, 7-day ILM). Both keep data in named volumes across `docker compose down`.
 - **Failure behaviour** (details in the architecture doc): losing Prometheus or Filebeat costs observability, never users; losing the Docker daemon or the api costs users their sandboxes but leaks nothing; a full pool degrades to a queue with a timeout rather than an error.
 
-`[SCREENSHOT: docs/architecture.md diagram rendered]`
+![Architecture diagram (docs/architecture.md rendered)](docs/screenshots/d1_architecture.png)
 
 ### D.2 Follow a metric: `termlab_sessions_started_total{outcome="ok"}`
 
 1. **Code updates it.** `api/sessions.py` `request_sandbox()`: after the container is assigned, `metrics.SESSIONS_STARTED.labels(outcome="ok").inc()`. The Counter object lives in `api/metrics.py` (`Counter("termlab_sessions_started_total", …, ["outcome"])`; all four outcomes pre-created so each series exists from startup at 0).
 2. **Exposed.** `GET /metrics` calls `generate_latest(REGISTRY)`; the exposition contains e.g. `termlab_sessions_started_total{outcome="ok"} 82.0` (`curl localhost:8000/metrics | grep sessions_started`).
 3. **Prometheus collects and stores it.** `monitoring/prometheus/prometheus.yml` job `api`, target `api:8000`, `scrape_interval: 5s`. Each scrape appends a sample `(timestamp, 82)` to the series identified by the label set `{__name__="termlab_sessions_started_total", outcome="ok", instance="api:8000", job="api", service="termlab-api"}`, kept 7 days in `prom_data`. Query: `curl 'localhost:9090/api/v1/query?query=termlab_sessions_started_total{outcome="ok"}'` → `82`.
-4. **Grafana queries and displays it.** Datasource uid `prometheus` (`monitoring/grafana/provisioning/datasources/prometheus.yml`). Business dashboard panel "Sessions started by outcome" runs `sum by (outcome) (rate(termlab_sessions_started_total[5m])) * 60` — a per-minute rate that survives counter resets when the api restarts — and "Sandbox requests by outcome (last hour)" runs `increase(…[1h])` for the absolute count. `[SCREENSHOT: /metrics line, Prometheus graph, Grafana panel]`
+4. **Grafana queries and displays it.** Datasource uid `prometheus` (`monitoring/grafana/provisioning/datasources/prometheus.yml`). Business dashboard panel "Sessions started by outcome" runs `sum by (outcome) (rate(termlab_sessions_started_total[5m])) * 60` — a per-minute rate that survives counter resets when the api restarts — and "Sandbox requests by outcome (last hour)" runs `increase(…[1h])` for the absolute count. 
+
+![Step 2: the counter in GET /metrics](docs/screenshots/d2_metrics_endpoint.png)
+
+![Step 3: the same series in the Prometheus graph](docs/screenshots/d2_prometheus_graph.png)
+
+![Step 4: the Grafana panel that plots it](docs/screenshots/d2_grafana_panel.png)
 
 ### D.3 Follow a log: one `sandbox_spawn` line
 
@@ -264,7 +274,9 @@ Raw: `scripts/results/fault_cold_start_20260913T134748Z.txt` (+ `.stages`), `loa
 
 **Cause and effect on users.** With the warm pool off every "New sandbox" pays `docker create` + `start` plus the injected 2 s, so the button takes ≈ 2.5 s instead of being instant; nothing fails and typing feels the same once the shell is up. The metrics say exactly that: spawn and the sandbox route's HTTP latency move, roundtrip and error counters do not — a slow *host*, not an overloaded one.
 
-`[SCREENSHOT: spawn p95 by source + HTTP p95 by route across the three stages]` `[SCREENSHOT: Kibana spawn_ms > 2000 count per stage]`
+![Spawn p50/p95 by source and HTTP p95 by route across the three cold_start stages (2026-09-13 13:47–13:55 UTC)](docs/screenshots/e1a_spawn_http_p95_cold_start.png)
+
+![Kibana: event:"sandbox_spawn" and spawn_ms > 2000 over the same window; hits only inside the fault stage](docs/screenshots/e1a_kibana_spawn_ms_cold_start.png)
 
 #### E.1.b `cpu_hog` — 4 unlimited `stress-ng --cpu 0` containers (noisy neighbour)
 
@@ -303,7 +315,7 @@ Raw: `scripts/results/fault_cpu_hog_*.txt` (+ `.stages`), `load_*_cpu_hog_*.json
 
 **At scale:** cardinality is multiplicative, `series = metrics × Π(distinct values per label)`. This service's honest labels give ≈ 60 series. One `session_id` label on the HTTP counter alone would add a series per session per status per route — at 1 000 sessions/day that is tens of thousands of series that never stop being scraped as long as the process lives, each costing head memory, WAL and index space, and slowing every `rate()` over the metric. That is why ids live in logs: Elasticsearch indexes `session_id` as a keyword and a query for one id costs one lookup, not one time series per id.
 
-`[SCREENSHOT: Prometheus graph of count(termlab_demo_requests_total) through the experiment]`
+![Prometheus graph of count(termlab_demo_requests_total): 1 → 100 → 1 across the experiment (2026-09-13 14:11–14:14 UTC)](docs/screenshots/e2_prometheus_count_demo_requests.png)
 
 ---
 
