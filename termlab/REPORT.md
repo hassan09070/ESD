@@ -199,7 +199,56 @@ Working searches (Kibana → Discover → **termlab logs**; full list in `script
 
 ### D.1 Architecture
 
-See `docs/architecture.md` for the Mermaid diagram, the per-component table (role, who it talks to, what state it holds and why), the "what happens if X stops" table and the data-location table. Summary of the choices:
+```mermaid
+flowchart LR
+    subgraph browser["Browser (xterm.js)"]
+        UI[index.html]
+    end
+    subgraph api["termlab-api  (FastAPI, :8000)"]
+        HTTP["HTTP: /sessions, /sessions/{id}/sandbox, /pool, /health, /metrics"]
+        WS["WS /ws/{id}: PTY bridge"]
+        SM["SessionManager\npool (10) · queue · warm pool (2)\nidle reaper · stats sampler"]
+    end
+    subgraph dockerd["Docker daemon (docker-desktop VM)"]
+        SBX1["sandbox\nsleep infinity + bash exec\n0.5 CPU · 256 MiB · no net"]
+        SBX2["sandbox …"]
+        WARM["warm sandbox ×2"]
+        HOG["cpu_hog stressors\n(fault only)"]
+    end
+    subgraph metrics["Metrics"]
+        PROM[(Prometheus\n5 s scrape · 7 d)]
+        GRAF[Grafana\n3 provisioned dashboards]
+        NODE[Node Exporter\n:9100]
+    end
+    subgraph logs["Logs"]
+        JSONF[(json-file\n3 × 10 MB)]
+        FB[Filebeat\nautodiscover termlab-api]
+        ES[(Elasticsearch\ntermlab-logs-YYYY.MM.DD · ILM 7 d)]
+        KB[Kibana\ndata view termlab-logs-*]
+    end
+    UI -- "fetch JSON (Bearer token)" --> HTTP
+    UI -- "binary frames = keystrokes / output\ntext frames = resize / exit" --> WS
+    HTTP --> SM
+    WS --> SM
+    SM -- "/var/run/docker.sock\ncreate · exec · resize · stats · remove" --> dockerd
+    WS -- "exec socket (tty)" --> SBX1
+    PROM -- "GET /metrics" --> HTTP
+    PROM -- "GET /metrics" --> NODE
+    NODE -. "/proc, /sys of the VM\n(where sandboxes run)" .- dockerd
+    GRAF -- PromQL --> PROM
+    api -- "stdout, one JSON object per line" --> JSONF
+    JSONF -- "tail + decode_json_fields" --> FB
+    FB -- "bulk index" --> ES
+    KB -- KQL --> ES
+    FB -. "docker.sock (read-only):\ncontainer names for autodiscover" .- dockerd
+    UI -. "links in the sidebar" .-> GRAF
+    UI -. "links in the sidebar" .-> KB
+    SETUP[setup (one-shot curl)] -- "ILM policy · index template · data view" --> ES
+    SETUP --> KB
+    IMG[sandbox-image (one-shot build)] -. "termlab-sandbox:local" .- dockerd
+```
+
+Solid arrows are the runtime data paths; dotted ones are metadata and one-shot jobs. Every box is a compose service except the sandboxes, which the api creates through the Docker socket. `docs/architecture.md` has the same diagram with the per-component table (role, who it talks to, what state it holds and why) and the data-location table (what survives `docker compose down`, what `down -v` deletes, when ILM and retention delete the rest). Summary of the choices:
 
 - **One control plane, N throwaway containers**, owned through one label (`termlab.sandbox=1`). Ownership by label is what makes crash recovery trivial: at startup the api removes everything it does not know about.
 - **Shell = `docker exec`, not the container's main process**, so a closed tab does not kill a box and reattach is possible; the idle reaper is the real lifecycle owner.
@@ -207,6 +256,22 @@ See `docs/architecture.md` for the Mermaid diagram, the per-component table (rol
 - **Warm pool** turns the dominant latency (container create+start) into a background cost, and gives the spawn histogram a `source` label that makes the cold_start experiment legible.
 - **Pull metrics, push logs.** Prometheus scrapes `/metrics` every 5 s (7-day TSDB); Filebeat tails Docker's json-file and pushes to ES (daily indices, 7-day ILM). Both keep data in named volumes across `docker compose down`.
 - **Failure behaviour** (details in the architecture doc): losing Prometheus or Filebeat costs observability, never users; losing the Docker daemon or the api costs users their sandboxes but leaks nothing; a full pool degrades to a queue with a timeout rather than an error.
+
+**What happens if a component stops** (users vs observability, and how it recovers):
+
+| Failure | Effect on users | Effect on observability | Recovery |
+|---|---|---|---|
+| **Docker daemon down / socket unmounted** | `POST /sandbox` → 500 `spawn_failed`, `outcome=error`; attached terminals get EOF when their exec dies; `/health` reports `docker:false` | `termlab_sessions_started_total{outcome="error"}` rises, `level:"error"` logs with `exc_type` | api reconnects on the next call; orphans removed at next api start |
+| **termlab-api crashes / restarts** | every terminal disconnects; in-memory session table is gone, so old tokens are 404; sandboxes are removed at the next startup (`orphan_cleanup`, reason `orphan`) | metrics counters reset to 0 (Prometheus `rate()` handles resets); a gap in the scrape; startup line in Kibana with the new `fault_mode` | compose `restart: unless-stopped` is deliberately *not* set so a crash is visible; `docker compose up -d api` |
+| **A sandbox hits 256 MiB** | the kernel OOM-kills it; the shell dies; reaper marks the session `reason=oom` within 10 s | `termlab_sandboxes_reaped_total{reason="oom"}`, `sandbox_reaped` log with `reason: oom` | user clicks *New sandbox* |
+| **Pool is full (10 running)** | the 11th request waits up to 60 s (`queue_length`, `queue_wait_seconds`), then 503 `queued_timeout` | Business dashboard: queued > 0, `outcome=queued_timeout`; `limit_hit` warnings in Kibana | someone exits or idles out; raise `TERMLAB_POOL_SIZE` |
+| **Prometheus down** | none | Grafana panels empty ("no data"); metrics for the outage are lost forever (pull model, no buffering in the app) | `docker compose up -d prometheus`; history before the outage is in `prom_data` |
+| **Grafana down** | none | no dashboards; Prometheus still has the data (query it at :9090) | restart; dashboards re-provision from files |
+| **Node Exporter down** | none | machine panels empty; target shows DOWN in Prometheus | restart |
+| **Filebeat down** | none | logs stop appearing in Kibana but are **not lost**: Docker keeps the last 3 × 10 MB per container and Filebeat resumes from its registry offset | restart; catch-up is automatic unless 30 MB was exceeded meanwhile |
+| **Elasticsearch down** | none | Filebeat retries with backoff (its output queue holds events in memory; on restart it re-reads from the registry); Kibana shows "unavailable" | restart ES, wait for `healthy` |
+| **Kibana down** | none | no UI; `curl :9200/termlab-logs-*/_search` still works | restart |
+| **Laptop sleeps** (Docker Desktop VM paused) | terminals freeze; idle timer does not advance (monotonic clock) | flat gaps in every panel; a stage of an experiment is unusable | `caffeinate -i` while running experiments |
 
 ![Architecture diagram (docs/architecture.md rendered)](docs/screenshots/d1_architecture.png)
 

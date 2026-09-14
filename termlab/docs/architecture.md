@@ -41,6 +41,9 @@ flowchart LR
     JSONF -- "tail + decode_json_fields" --> FB
     FB -- "bulk index" --> ES
     KB -- KQL --> ES
+    FB -. "docker.sock (read-only):\ncontainer names for autodiscover" .- dockerd
+    UI -. "links in the sidebar" .-> GRAF
+    UI -. "links in the sidebar" .-> KB
     SETUP[setup (one-shot curl)] -- "ILM policy · index template · data view" --> ES
     SETUP --> KB
     IMG[sandbox-image (one-shot build)] -. "termlab-sandbox:local" .- dockerd
