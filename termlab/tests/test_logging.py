@@ -4,7 +4,7 @@ import logging
 
 import structlog
 
-from api.logging_config import FORBIDDEN_KEYS, drop_forbidden_keys, setup_logging
+from api.logging_config import FORBIDDEN_KEYS, drop_forbidden_keys, redact_secrets_in_text, setup_logging
 
 
 def test_processor_strips_terminal_content_and_credentials():
@@ -36,6 +36,25 @@ def test_rendered_line_is_single_json_with_required_fields():
 def test_stdlib_loggers_are_json_too():
     buf = io.StringIO()
     setup_logging(stream=buf)
-    logging.getLogger("uvicorn.error").info("Application startup complete.")
+    logging.getLogger("uvicorn.error").warning("ASGI callable returned without sending handshake.")
     doc = json.loads(buf.getvalue().strip().splitlines()[-1])
-    assert doc["event"] == "Application startup complete." and doc["service"] == "termlab-api"
+    assert doc["event"] == "ASGI callable returned without sending handshake." and doc["service"] == "termlab-api"
+    assert doc["level"] == "warning"
+
+
+def test_uvicorn_connection_chatter_is_not_logged():
+    buf = io.StringIO()
+    setup_logging(stream=buf)
+    logging.getLogger("uvicorn.error").info("connection open")
+    logging.getLogger("uvicorn.error").info('1.2.3.4:5 - "WebSocket /ws/abc?token=SECRET&cols=80" [accepted]')
+    assert buf.getvalue() == ""
+
+
+def test_token_in_text_is_redacted_even_if_logged():
+    line = '1.2.3.4:5 - "WebSocket /ws/abc?token=SECRET-x_y&cols=80" [accepted]'
+    out = redact_secrets_in_text(None, "info", {"event": line, "msg": line, "n": 1})
+    assert "SECRET" not in json.dumps(out) and "token=[redacted]&cols=80" in out["event"]
+    buf = io.StringIO()
+    setup_logging(stream=buf)
+    logging.getLogger("uvicorn.error").warning(line)          # a WARNING would pass the level filter
+    assert "SECRET" not in buf.getvalue() and "[redacted]" in buf.getvalue()

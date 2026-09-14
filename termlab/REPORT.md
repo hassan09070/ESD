@@ -127,11 +127,16 @@ It is the metric that separates the two faults: **cold_start moves spawn latency
 | `sandbox_spawn` | info / error | sandbox_id, source, spawn_ms, queue_ms, image, cold_delay_ms, exc_type | `request_sandbox` | the per-spawn detail behind the histogram |
 | `ws_attach` / `ws_detach` | info | sandbox_id, cols, rows, ws_count / reason, duration_ms, bytes_in, bytes_out, commands | `bridge.py` via `sessions.py` | terminal lifecycle; byte *counts* only |
 | `sandbox_reaped` | info | reason, lifetime_s, bytes_in, bytes_out, commands, source | `reap` | end of trace + billing record |
+| `queue_cancelled` | info | session_id | `request_sandbox` | user pressed Destroy (or closed the page) while still queued |
 | `orphan_cleanup` | warning | removed, names, reason | startup/shutdown | leaks after a crash |
 | `warm_pool` | info | action (fill/claim/drain), size, sandbox_id | `warm_pool.py` | why a spawn was warm or cold |
+| `fault` | warning | fault_mode, hogs | `faults.py` `start_hogs` | the cpu_hog stressors were started (E.1.b) |
+| `image_missing` | error | image | `main.py` lifespan | the sandbox image was not built; every spawn will fail |
 | `resize_failed`, `error` | warning / error | exc_type, exc_message, traceback | anywhere | failures |
 
-**What is deliberately not logged:** terminal input and output. Users type passwords into shells. `drop_forbidden_keys` removes `stdin`, `stdout`, `data`, `output`, `token`, `authorization`, `cookie`, … before rendering, and a test asserts a fake secret never reaches the rendered line. No personal data exists: sessions are anonymous.
+uvicorn's own loggers go through the same formatter, so the few lines it emits (`Started server process`, startup/shutdown messages, warnings) are JSON too, with the message in `event`/`msg` and no request id. `uvicorn.error` is kept at WARNING: at INFO it logs `connection open` / `connection closed` for every terminal and the WebSocket handshake URL *with the token in the query string*. I found that out from Kibana (`message : "[accepted]"` matched every attach), which is exactly the kind of thing the log pipeline is for; the level change plus a `redact_secrets_in_text` processor that masks any `token=…` inside a string fixed it, and `tests/test_logging.py` asserts both.
+
+**What is deliberately not logged:** terminal input and output. Users type passwords into shells. `drop_forbidden_keys` removes `stdin`, `stdout`, `data`, `output`, `token`, `authorization`, `cookie`, … before rendering, `redact_secrets_in_text` masks `token=` values inside strings, and tests assert a fake secret never reaches the rendered line. No personal data exists: sessions are anonymous.
 
 ### C.2 How Filebeat collects and parses
 
