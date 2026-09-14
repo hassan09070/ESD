@@ -130,4 +130,4 @@ docker rmi termlab-sandbox:local   # optional
 
 ## Credits
 
-Built for CS 318x Enterprise Software Development (Habib University), Fall 2026. The monitoring stack layout (compose services, Filebeat autodiscover + custom index template, experiment scripts) follows the pattern of my earlier Assignment-1 project `fixit`, adapted to this app. Libraries: FastAPI, uvicorn, docker-py, prometheus_client, structlog, xterm.js; Lab 1 (Midnight Launch) was the reference for the metric/lens vocabulary.
+Built for Enterprise Software Development (Habib University), Fall 2026, Assignment 1. Full credits are in `REPORT.md` → Credits: Lab 1 (Midnight Launch) for the metric vocabulary; the compose/Filebeat/experiment-script pattern from my earlier `fixit` project; the Node dashboard trimmed from Grafana community dashboard 1860 (*Node Exporter Full*); libraries FastAPI, uvicorn, docker-py, prometheus_client, structlog, xterm.js and the pinned Prometheus/Grafana/Elastic images; Claude (Anthropic) as an AI pair programmer for drafting code, generating dashboard JSON and reviewing the report. Design, experiments and results are my own.
