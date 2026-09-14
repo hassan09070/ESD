@@ -124,7 +124,7 @@ It is the metric that separates the two faults: **cold_start moves spawn latency
 | Event | Level | Extra fields | Emitted in | Why |
 |---|---|---|---|---|
 | `startup` / `shutdown` | info | version, fault_mode, pool_capacity, warm_pool_size, idle_timeout_s, orphans_removed, hogs | `main.py` lifespan | know the configuration behind every time range |
-| `http_request` | info | method, path, route, status_code, status, duration_ms, request_id, session_id | middleware | one line per request, the log twin of the RED metrics |
+| `http_request` | info | method, path, route, status_code, status, duration_ms, request_id, session_id | middleware | one line per request, the log twin of the RED metrics (`/metrics` and `/health` are skipped: Prometheus and the container healthcheck would add 18 identical lines a minute; `/health` is still counted in the metrics) |
 | `session_created` | info | session_id, user_id | `create_session` | start of a user's trace |
 | `queue_wait` | info (warning > 5 s) | queue_ms, queue_length, pool_free | `request_sandbox` | who waited, how long |
 | `limit_hit` | warning | outcome, waited_ms, pool_capacity, queue_length | `request_sandbox` | who was turned away |

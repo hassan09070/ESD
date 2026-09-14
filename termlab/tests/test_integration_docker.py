@@ -6,7 +6,7 @@ import time
 import pytest
 
 from api.config import Settings
-from api.docker_client import SANDBOX_LABEL, RealDocker, sandbox_run_kwargs
+from api.docker_client import RealDocker
 
 pytestmark = pytest.mark.skipif(not os.path.exists("/var/run/docker.sock"), reason="no docker socket")
 
@@ -71,9 +71,3 @@ def test_spawn_exec_resize_stats_reap(real):
     assert not real.inspect(sb).running
     assert all(x.name != "termlab-sbx-test" for x in real.list_sandboxes())
 
-
-def test_run_kwargs_are_hardened():
-    k = sandbox_run_kwargs(Settings(), "n", {})
-    assert k["network_mode"] == "none" and k["read_only"] and k["cap_drop"] == ["ALL"] and k["user"] == "1000:1000"
-    assert k["nano_cpus"] == 500_000_000 and k["mem_limit"] == "256m" and k["pids_limit"] == 100 and k["labels"][SANDBOX_LABEL] == "1"
-    assert "nano_cpus" not in sandbox_run_kwargs(Settings(), "h", {}, hog=True)

@@ -14,6 +14,10 @@ from __future__ import annotations
 
 import os
 
+# The *_created companion gauges double the series count for no value; must be set before the
+# client library is imported (api/Dockerfile sets it too, this covers `uv run uvicorn`).
+os.environ.setdefault("PROMETHEUS_DISABLE_CREATED_SERIES", "True")
+
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, Gauge, Histogram, Summary, generate_latest
 
 HTTP_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)

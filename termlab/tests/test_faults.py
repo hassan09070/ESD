@@ -3,7 +3,7 @@ import time
 import pytest
 
 from api.config import Settings
-from api.docker_client import FakeDocker
+from api.docker_client import SANDBOX_LABEL, FakeDocker, sandbox_run_kwargs
 from api.faults import Fault, start_hogs, stop_hogs
 from api.sessions import SessionManager
 
@@ -56,3 +56,11 @@ async def test_manager_under_cpu_hog_excludes_hogs_from_stats(clock):
     assert fake._tick == 0
     await m.shutdown()
     assert not fake.containers               # hogs removed on shutdown
+
+
+def test_run_kwargs_are_hardened():
+    k = sandbox_run_kwargs(Settings(), "n", {})
+    assert k["network_mode"] == "none" and k["read_only"] and k["cap_drop"] == ["ALL"] and k["user"] == "1000:1000"
+    assert k["nano_cpus"] == 500_000_000 and k["mem_limit"] == "256m" and k["pids_limit"] == 100 and k["labels"][SANDBOX_LABEL] == "1"
+    assert "uid=1000" in k["tmpfs"]["/home/user"]                   # the root-owned-tmpfs bug (REPORT D.4)
+    assert "nano_cpus" not in sandbox_run_kwargs(Settings(), "h", {}, hog=True)

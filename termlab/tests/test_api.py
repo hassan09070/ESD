@@ -68,10 +68,32 @@ def test_pool_full_returns_503_with_wait(client):
 
 def test_metrics_endpoint_and_http_metrics(client):
     client.post("/sessions")
+    client.get("/health")
     body = client.get("/metrics").text
     assert 'termlab_http_requests_total{method="POST",path="/sessions",status="201"}' in body
+    assert 'termlab_http_requests_total{method="GET",path="/health",status="200"}' in body      # counted ...
     assert "termlab_build_info" in body
+    assert "_created" not in body
     assert REGISTRY.get_sample_value("termlab_http_requests_total", {"method": "GET", "path": "/metrics", "status": "200"}) is None
+
+
+def test_health_is_not_logged_and_request_id_is_bounded(client):
+    import io
+    import json
+    import logging
+
+    buf = io.StringIO()
+    tap = logging.StreamHandler(buf)
+    tap.setFormatter(logging.getLogger().handlers[0].formatter)     # same JSON formatter as stdout
+    logging.getLogger().addHandler(tap)
+    try:
+        client.get("/health")
+        r = client.post("/sessions", headers={"X-Request-ID": "x" * 500})
+    finally:
+        logging.getLogger().removeHandler(tap)
+    assert r.headers["X-Request-ID"] == "x" * 64
+    events = [(l["event"], l.get("path")) for l in (json.loads(x) for x in buf.getvalue().splitlines() if x.startswith("{"))]
+    assert ("http_request", "/health") not in events and ("http_request", "/sessions") in events    # ... but not logged
 
 
 def test_shutdown_reaps_everything(client):

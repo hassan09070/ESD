@@ -72,8 +72,9 @@ def create_app(settings: Settings | None = None, backend: DockerBackend | None =
         """Binds request_id (X-Request-ID header or generated), records
         termlab_http_requests_total / termlab_http_request_duration_seconds and logs one
         `http_request` line per request. /metrics is skipped (Prometheus' own scrapes would
-        drown the request panels). WebSocket connections never pass through here."""
-        request_id = request.headers.get("x-request-id") or uuid4().hex[:12]
+        drown the request panels); /health is counted in the metrics but not logged (the
+        container healthcheck hits it every 10 s). WebSocket connections never pass through here."""
+        request_id = (request.headers.get("x-request-id") or uuid4().hex[:12])[:64]   # bounded: it becomes a log field (and a label in E.2)
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(request_id=request_id)
         start = time.perf_counter()
@@ -95,6 +96,7 @@ def create_app(settings: Settings | None = None, backend: DockerBackend | None =
             if path != "/metrics":
                 metrics.HTTP_REQUESTS.labels(method=request.method, path=path, status=str(status)).inc()
                 metrics.HTTP_DURATION.labels(method=request.method, path=path).observe(duration)
+            if path not in ("/metrics", "/health"):
                 log.info("http_request", msg=f"{request.method} {request.url.path} -> {status}", method=request.method,
                          path=request.url.path, route=path, status_code=status, status="ok" if status < 500 else "error",
                          duration_ms=int(duration * 1000), request_id=request_id, **({"session_id": session_id} if session_id else {}))

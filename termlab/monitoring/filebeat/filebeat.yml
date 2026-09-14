@@ -23,7 +23,7 @@ filebeat.autodiscover:
       hints.enabled: false
       templates:
         - condition:
-            contains:
+            equals:
               docker.container.name: termlab-api
           config:
             - type: filestream
