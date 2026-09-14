@@ -18,7 +18,7 @@ Code, compose stack, dashboards, scripts and raw results are in this directory (
 - Every sandbox: `--network none`, 0.5 CPU, 256 MiB with swap disabled, 100 pids, uid 1000, read-only rootfs, tmpfs `/home/user` and `/tmp`, all capabilities dropped, `no-new-privileges`. `sleep infinity` under docker-init is PID 1; each terminal attach is a separate exec, so closing the tab does not kill the box — the **idle reaper** (15 min without keystrokes) does, or `exit`, or the OOM killer.
 - Every container carries the label `termlab.sandbox=1`; the api removes everything with that label at startup (orphans from a crash) and shutdown.
 
-**What works.** All of the above, verified by 52 tests (unit tests against an in-memory fake Docker; an integration test against the real daemon checking exec, resize, read-only rootfs, no network, stats, removal) and by load runs of up to 82 concurrent-ish users (`scripts/results/`). Deliberately out of scope: persistence between sessions, login, sharing a terminal, and exposure to the internet (see D.4 on the Docker socket).
+**What works.** All of the above, verified by 55 tests (unit tests against an in-memory fake Docker; an integration test against the real daemon checking exec, resize, read-only rootfs, writable tmpfs home, no network, stats, removal) and by load runs: a 68-user smoke run and a 14-user run against the pool of 10 that shows the queue (`scripts/results/`), plus the experiment stages in E. Deliberately out of scope: persistence between sessions, login, sharing a terminal, and exposure to the internet (see D.4 on the Docker socket).
 
 **How to try it.** `docker compose up -d --build`, open http://localhost:8000, click New sandbox, run `htop`, `stress-ng --cpu 4 --timeout 20s`, `python3 -c 'x=bytearray(300*2**20)'` (OOM), `exit`. Grafana at :3000 (admin/admin), Kibana at :5601.
 
@@ -51,10 +51,10 @@ All metrics are defined in one module, `api/metrics.py`, and carry the `termlab_
 | `termlab_sandbox_seconds_total` | Counter | — | s | **business** | billable sandbox-time (sum of lifetimes) | `reap`, `inc(lifetime)` |
 | `termlab_session_duration_seconds` | Summary | — | s | **business** | mean sandbox lifetime | `reap`, `observe(lifetime)` |
 | `termlab_commands_total` | Counter | — | 1 | **business** | Enter presses (usage intensity, no content) | `api/bridge.py`, `count(b"\r")` |
-| `termlab_sandboxes_active` / `termlab_users_connected` | Gauge | — | 1 | **business** | running sandboxes / open terminals | `sessions.py` / `bridge.py` |
+| `termlab_sandboxes_active` / `termlab_users_connected` | Gauge | — | 1 | **business** | running sandboxes / open terminals | `sessions.py` `request_sandbox`/`reap` / `sessions.py` `on_attach`/`on_detach` (called by the bridge) |
 | `termlab_demo_requests_total` | Counter | `request_id` **only when** `TERMLAB_DEMO_CARDINALITY=1` | 1 | E.2 only | the cardinality experiment | `POST /sessions` |
 
-Counts: 8 Counters, 9 Gauges, 5 Histograms, 2 Summaries — all four types, across application and business categories.
+Counts (`curl -s localhost:8000/metrics | grep "^# TYPE termlab_"`): 25 metric families — 8 Counters, 10 Gauges, 5 Histograms, 2 Summaries — all four types, across application and business categories. `tests/test_metrics.py` asserts the four types and the `termlab_` prefix.
 
 ### B.2 Dashboard: termlab / Application (`monitoring/grafana/dashboards/termlab_app.json`)
 
