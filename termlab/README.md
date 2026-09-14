@@ -71,7 +71,7 @@ Tunables (`.env`, then `docker compose up -d api`): `TERMLAB_POOL_SIZE` (10), `T
 ```sh
 unset VIRTUAL_ENV   # only if your shell has another venv active
 uv sync
-uv run pytest       # 55 tests; the Docker integration test skips itself when no daemon is reachable
+uv run pytest       # 57 tests; the Docker integration test skips itself when no daemon is reachable
 ```
 
 The unit tests run the whole control plane against an in-memory `FakeDocker` (echo shells over socketpairs). `tests/test_integration_docker.py` spawns a real sandbox and checks the exec PTY, resize, read-only rootfs, no network, stats and removal.
