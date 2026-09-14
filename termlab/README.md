@@ -85,12 +85,12 @@ Run these under `caffeinate -i` on a Mac (a sleeping laptop pauses the Docker VM
 **E.1 fault** — three stages (baseline / fault / recovery), ≥ 120 s each, fault toggled by re-creating the api:
 
 ```sh
-caffeinate -i scripts/experiment_fault.sh cold_start 8    # warm pool off + 2 s per spawn (deterministic)
-caffeinate -i scripts/experiment_fault.sh cpu_hog 8       # 4 unlimited stress-ng containers (noisy neighbour)
-python3 scripts/stage_counts.py <start> <end> baseline    # per-stage numbers from Prometheus + Elasticsearch
+caffeinate -i scripts/experiment_fault.sh cold_start 8                              # warm pool off + 2 s per spawn (deterministic)
+SESSION_SECONDS=20 CONCURRENCY=6 caffeinate -i scripts/experiment_fault.sh cpu_hog 8  # 4 unlimited stress-ng containers (noisy neighbour)
+python3 scripts/stage_counts.py <start> <end> baseline                              # per-stage numbers from Prometheus + Elasticsearch
 ```
 
-The runner prints each stage's UTC window (also in `scripts/results/fault_<mode>_<ts>.txt.stages`); paste them into Grafana / Kibana time pickers.
+`SESSION_SECONDS=20` keeps each cpu_hog terminal open for 20 s so the 10-second stats sampler sees the sandboxes (with the default 0 they exit in ~5 s); these are the exact settings behind the numbers in `REPORT.md`. The runner prints each stage's UTC window (also in `scripts/results/fault_<mode>_<ts>.txt.stages`); paste them into Grafana / Kibana time pickers.
 
 **E.2 cardinality** — `python3 scripts/experiment_cardinality.py` (capped at 100 labelled series; ~2 min).
 

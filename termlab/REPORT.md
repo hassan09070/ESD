@@ -248,21 +248,21 @@ See `docs/architecture.md` for the Mermaid diagram, the per-component table (rol
 
 ### E.1 Reproduce a problem — a slow sandbox host (`cold_start`) and a noisy neighbour (`cpu_hog`)
 
-**Setup.** `scripts/experiment_fault.sh <mode> 8` runs three stages of ≥ 120 s (24 scrapes each), each with at least 8 virtual users at concurrency 4, every user opening a real WebSocket terminal, running 5 commands (echo / ls / python / 1 s of stress-ng / base64 of 200 kB) and typing `exit`. The fault is toggled by re-creating the api with `TERMLAB_FAULT=<mode>` (which also reaps running sandboxes, reason `admin`, and — for cpu_hog — leaves the stressors to be removed by the next restart's orphan cleanup). `termlab_build_info{fault_mode}` and the `startup` log line record the mode. Predictions were written before running.
+**Setup.** `scripts/experiment_fault.sh <mode> 8` runs three stages of ≥ 120 s (24 scrapes each), each with at least 8 virtual users at concurrency 4, every user opening a real WebSocket terminal, running 5 commands (echo / ls / python / 1 s of stress-ng / base64 of 200 kB) and typing `exit`. The fault is toggled by re-creating the api with `TERMLAB_FAULT=<mode>` (which also reaps running sandboxes, reason `admin`, and — for cpu_hog — leaves the stressors to be removed by the next restart's orphan cleanup). `termlab_build_info{fault_mode}` and the `startup` log line record the mode. For each run I wrote the predictions (the P-rows below) in my notes before starting the script and filled in the result column afterwards from `scripts/stage_counts.py`; the tables keep that order.
 
 #### E.1.a `cold_start` — warm pool disabled, +2 s inside every spawn (deterministic)
 
 | # | Prediction | Result |
 |---|---|---|
 | P1 | spawn p95 rises from < 0.1 s (warm) to > 2.5 s; only `source="cold"` receives samples in stage 2 | **Confirmed.** spawn p95: warm 0.048 s (baseline) → cold 2.95 s (fault; bucket edge, real values 2.25 s mean / 2.47 s p95 / 2.56 s max from the client) → warm 0.048 s (recovery). Stage 2 had 100 cold spawns and 0 warm. |
-| P2 | `termlab_warm_pool_size` 2 → 0 → 2 | **Confirmed.** avg `termlab_warm_pool_size` per stage: 1.6 → 0.0 → 1.6 (it dips below 2 while a claim is being refilled). |
+| P2 | `termlab_warm_pool_size` 2 → 0 → 2 | **Confirmed.** avg `termlab_warm_pool_size` per stage: 1.6 → 0.0 → 1.5 (it dips below 2 while a claim is being refilled). |
 | P3 | HTTP p95 for `POST /sessions/{id}/sandbox` rises by ≈ 2 s; `POST /sessions` unchanged | **Confirmed.** HTTP p95 `POST /sessions/{id}/sandbox`: 0.005 s → 2.465 s → 0.005 s; `POST /sessions`: 0.005 / 0.007 / 0.005 s. |
-| P4 | terminal roundtrip p95 unchanged (fault is before the shell exists) | **Confirmed.** roundtrip p95 0.021 / 0.017 / 0.015 s; p99 0.046 / 0.023 / 0.032 s (client-side p95 22.9 / 16.5 / — ms). |
+| P4 | terminal roundtrip p95 unchanged (fault is before the shell exists) | **Confirmed.** roundtrip p95 0.021 / 0.017 / 0.015 s; p99 0.046 / 0.023 / 0.032 s (client-side p95 22.9 / 16.5 / 17.6 ms). |
 | P5 | fewer sessions per stage (each user spends 2 s longer), zero `error` outcomes, zero 5xx | **Confirmed.** sessions ok per ~122 s stage: 184 → 100 → 182; `error` = 0, `queued_timeout` = 0, HTTP 5xx = 0 in all stages. |
-| P6 | Kibana `event:"sandbox_spawn" and spawn_ms > 2000` matches every spawn in stage 2 and none in 1/3 | **Confirmed.** Kibana `event:"sandbox_spawn" and spawn_ms > 2000`: 0 / **100** / 0 documents per stage; `source:"cold"` 4 / 100 / 4, `source:"warm"` 176 / 0 / 178. |
+| P6 | Kibana `event:"sandbox_spawn" and spawn_ms > 2000` matches every spawn in stage 2 and none in 1/3 | **Confirmed.** Kibana `event:"sandbox_spawn" and spawn_ms > 2000`: 0 / **100** / 0 documents per stage; `source:"cold"` 4 / 100 / 4, `source:"warm"` 176 / 0 / 176. |
 | P7 | recovery: [1m] panels back to baseline within a minute, [5m] within 5 | **Confirmed.** Recovery stage numbers equal baseline within noise (table below); the [1m] roundtrip panel never moved, the [5m] spawn/HTTP panels decayed over the first ~5 min of stage 3. |
 
-Stage windows (UTC) and per-stage numbers (`scripts/stage_counts.py`, raw in `scripts/results/`):
+Stage windows (UTC) and per-stage numbers (`scripts/stage_counts.py`, raw in `scripts/results/`). Prometheus counts are `increase()` over the stage window, so they are extrapolated and fractional (184.5 is printed as 184); the Kibana document counts are exact:
 
 | Stage | UTC window | users | spawns warm / cold | spawn p95 warm / cold (s) | HTTP p95 sandbox route (s) | roundtrip p95 / p99 (s) | ok / timeout / error | 5xx | spawn_ms>2000 docs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -307,13 +307,13 @@ Raw: `scripts/results/fault_cpu_hog_*.txt` (+ `.stages`), `load_*_cpu_hog_*.json
 | Snapshot | `count(termlab_demo_requests_total)` | `count(last_over_time(…[15m]))` | series API (30 m) | `prometheus_tsdb_head_series` | `count({__name__=~"termlab_.*"})` |
 |---|---|---|---|---|---|
 | before | 1 | 1 | 1 | 3,587 | 136 |
-| flag on, idle | 0 | 1 | 1 | 3,616 | 105 |
+| flag on, idle | 0 (a labelled counter has no series until its first label value is seen) | 1 | 1 | 3,616 | 105 |
 | flag on, after 100 requests | 100 | 101 | 101 | 3,716 | 220 |
 | flag off, after 20 requests | 1 | 101 | 101 | 3,722 | 121 |
 
 **Reading.** 100 requests → 100 series for one counter (each id is its own series, each series ≈ 1–2 kB of memory in the head block plus index entries). After the label is removed the live count drops to 1 on the next scrape (Prometheus writes staleness markers for series that vanished), but the 100 old series are still on disk and still answer range queries (`last_over_time`, series API) until the 7-day retention deletes them — removing a label does not delete history.
 
-**At scale:** cardinality is multiplicative, `series = metrics × Π(distinct values per label)`. This service's honest labels give ≈ 60 series. One `session_id` label on the HTTP counter alone would add a series per session per status per route — at 1 000 sessions/day that is tens of thousands of series that never stop being scraped as long as the process lives, each costing head memory, WAL and index space, and slowing every `rate()` over the metric. That is why ids live in logs: Elasticsearch indexes `session_id` as a keyword and a query for one id costs one lookup, not one time series per id.
+**At scale:** cardinality is multiplicative, `series = metrics × Π(distinct values per label)`. This service's bounded labels give 105–136 `termlab_` series in the table above (every histogram bucket, `_sum` and `_count` is its own series, and the HTTP counter grows one series per method × route × status seen since the last restart — which is why the number drops after each api re-create and climbs back). One demo counter with one id label added as many series as the whole service had. One `session_id` label on the HTTP counter alone would add a series per session per status per route — at 1 000 sessions/day that is tens of thousands of series that never stop being scraped as long as the process lives, each costing head memory, WAL and index space, and slowing every `rate()` over the metric. That is why ids live in logs: Elasticsearch indexes `session_id` as a keyword and a query for one id costs one lookup, not one time series per id.
 
 ![Prometheus graph of count(termlab_demo_requests_total): 1 → 100 → 1 across the experiment (2026-09-13 14:11–14:14 UTC)](docs/screenshots/e2_prometheus_count_demo_requests.png)
 
