@@ -56,7 +56,7 @@ flowchart LR
 | **warm sandboxes** | 2 pre-created sandboxes (label `termlab.warm=1`) so a claim costs ~0 ms instead of a ~0.5–1.5 s create+start | – | – |
 | **Prometheus** | scrapes `api:8000/metrics`, `node-exporter:9100`, itself every 5 s; 7-day retention | api, node-exporter | `prom_data` volume (TSDB) |
 | **Grafana** | three provisioned dashboards (Application, Business, Node Exporter); datasource uid `prometheus` | Prometheus | `grafana_data` volume (only prefs/users; dashboards are files) |
-| **Node Exporter** | machine metrics of the kernel it runs on — under Docker Desktop that is the `docker-desktop` VM, i.e. exactly where the sandboxes run | – | – |
+| **Node Exporter** | machine metrics of the kernel it runs on (`pid`, `uts` and `network` namespaces are the host's) — under Docker Desktop that is the `docker-desktop` VM, i.e. exactly where the sandboxes run; Prometheus reaches it at the docker0 gateway because a host-network container has no compose DNS name | – | – |
 | **Filebeat** | Docker autodiscover; tails only the container named `termlab-api`; `decode_json_fields` turns each line into fields; `@timestamp` := our `ts` | Docker socket (metadata), `/var/lib/docker/containers` (log files), Elasticsearch | `filebeat_registry` volume (read offsets: a restart does not re-ship) |
 | **Elasticsearch** | stores `termlab-logs-YYYY.MM.DD`; explicit keyword/number mappings from `monitoring/elasticsearch/index_template.json`; ILM deletes indices after 7 days | – | `es_data` volume |
 | **Kibana** | Discover on the `termlab-logs-*` data view | Elasticsearch | its own saved objects in ES |

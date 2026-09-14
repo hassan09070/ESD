@@ -69,6 +69,11 @@ services:
       - prom_data:/prometheus
     ports:
       - "9090:9090"
+    extra_hosts:
+      # node-exporter runs with network_mode: host (see below); 172.17.0.1 is the docker0
+      # gateway, i.e. the host/VM as seen from a bridge network. Change it if `docker network
+      # inspect bridge` shows a different gateway.
+      - "node-exporter:172.17.0.1"
     depends_on:
       - api
       - node-exporter
@@ -95,17 +100,20 @@ services:
   # the Docker Linux VM, and the host root cannot be bind-mounted with rslave, so the default
   # config mounts nothing. On a real Linux host add the host mounts with:
   #   docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d
+  # pid/uts/network are the host's (the VM's) so processes, the hostname and - importantly -
+  # /proc/net/dev are the machine's, not this container's own veth. A host-network container
+  # has no compose DNS name, so Prometheus reaches it through the docker0 gateway
+  # (extra_hosts below); on Docker Desktop port 9100 is not published to the Mac.
   node-exporter:
     image: prom/node-exporter:v1.9.1
     container_name: termlab-node-exporter
     pid: host
     uts: host        # report the real kernel hostname in node_uname_info{nodename}
+    network_mode: host
     command:
       - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
       # default list minus "overlay" so the container's / (backed by the VM disk) is reported
       - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$$
-    ports:
-      - "9100:9100"
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0

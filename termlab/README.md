@@ -30,7 +30,7 @@ docker compose ps -a | grep -E 'setup|sandbox-image'   # both must show "Exited 
 | Grafana | http://localhost:3000 | login `admin` / `admin`; folder **termlab**: Application, Business, Node Exporter |
 | Kibana | http://localhost:5601 | Discover → data view **termlab logs** (`termlab-logs-*`) |
 | Elasticsearch | http://localhost:9200 | `_cat/indices/termlab-logs-*?v` |
-| Node Exporter | http://localhost:9100/metrics | machine metrics of the Docker VM (`nodename=docker-desktop` on a Mac) |
+| Node Exporter | (host network, not published on a Mac) | machine metrics of the Docker VM (`nodename=docker-desktop`); see them at Prometheus → Status → Targets → `node`, or `docker exec termlab-prometheus wget -qO- http://node-exporter:9100/metrics` |
 
 The api reaches the Docker daemon through `/var/run/docker.sock` mounted into its container. That makes the api container root-equivalent on the Docker host; fine for a local classroom stack, not for a public deployment (see `REPORT.md` §D.4).
 
@@ -122,6 +122,7 @@ docker rmi termlab-sandbox:local   # optional
 - **`docker compose ps` shows `api` unhealthy / restarting** — `docker logs termlab-api`. `image_missing` means `termlab-sandbox:local` was not built: `docker compose up -d --build sandbox-image`. A `docker.sock` permission error on Linux: add your user to the `docker` group or run compose with sudo.
 - **"no sandbox: queued_timeout"** — ten sandboxes are running. `curl localhost:8000/pool`; wait for an idle reap, or `TERMLAB_POOL_SIZE=20 docker compose up -d api`.
 - **Terminal hangs after the laptop slept** — the Docker VM was paused; reload the page (a new `bash` attaches to the same sandbox).
+- **Prometheus target `node` is DOWN** — node-exporter runs with `network_mode: host` and Prometheus reaches it at the docker0 gateway `172.17.0.1` (`extra_hosts` in `docker-compose.yml`). If `docker network inspect bridge` shows another gateway, change that IP. On Linux, a host firewall (ufw) may block traffic from the compose bridge to the host.
 - **Grafana panels empty** — no traffic yet (`scripts/load.py`), or the time picker is outside the run. "Data source not found": `docker compose up -d --force-recreate grafana`.
 - **Kibana shows no data** — `docker compose ps -a | grep setup` must be `Exited (0)` and `filebeat` `Up`; `curl 'localhost:9200/_cat/indices/termlab-logs-*?v'`. Filebeat only ships the container named `termlab-api`.
 - **Leftover `termlab-sbx-*` containers** after killing the api hard — `scripts/cleanup.sh`, or just start the api: it removes them at startup (`orphan_cleanup` log line).

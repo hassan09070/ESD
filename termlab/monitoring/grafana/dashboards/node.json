@@ -92,7 +92,7 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "Trimmed **Node Exporter** view (the community dashboard 1860 is the full version). Node Exporter reads `/proc` and `/sys` of the kernel it runs on. Under Docker Desktop for Mac that kernel is the Docker Linux VM (`nodename=docker-desktop`), so CPU/memory are the VM's allotment (see `docker info`), not the whole laptop. That is the honest machine to measure here: every termlab sandbox (and the cpu_hog stressors) runs inside this VM, so a `yes > /dev/null` in one sandbox shows up in the CPU panel below."
+        "content": "Trimmed **Node Exporter** view (the community dashboard 1860 is the full version). Node Exporter reads `/proc` and `/sys` of the kernel it runs on (pid, uts and network namespaces are the host's, so processes, hostname and network interfaces are the machine's). Under Docker Desktop for Mac that kernel is the Docker Linux VM (`nodename=docker-desktop`), so CPU/memory are the VM's allotment (see `docker info`), not the whole laptop. That is the honest machine to measure here: every termlab sandbox (and the cpu_hog stressors) runs inside this VM, so a `yes > /dev/null` in one sandbox shows up in the CPU panel below."
       }
     },
     {
@@ -266,7 +266,7 @@
       "id": 6,
       "type": "timeseries",
       "title": "Network rx / tx",
-      "description": "Bytes per second in and out, excluding loopback and Docker virtual interfaces.",
+      "description": "Bytes per second on the machine's interfaces, excluding loopback, container veths and docker bridges. node-exporter runs with network_mode: host, so these are the VM's eth0 (traffic to/from the Mac and the internet) and Docker Desktop's internal services interface - not the exporter container's own veth.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
