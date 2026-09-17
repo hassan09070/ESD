@@ -1,0 +1,4588 @@
+{
+ "start": "2026-09-17T07:47:19.594526+00:00",
+ "end": "2026-09-17T07:49:22.705990+00:00",
+ "label": "slow_recovery",
+ "args": {
+  "duration": 120.0,
+  "concurrency": 4,
+  "prep": 3.0,
+  "url": "http://localhost:8000",
+  "json": true,
+  "label": "slow_recovery"
+ },
+ "rows": [
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.03209466599946609
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.010669916999177076
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.03349070900003426
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.005625750000035623
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.03340708399991854
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010804458001075545
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.011262208001426188
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00660391599740251
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.008979542002634844
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.03211112500139279
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008627417002571747
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003624624998337822
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00798716699864599
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0033692079996399116
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0035653750019264407
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005136666000908008
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0028835410012106877
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0036927080000168644
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002236249998532003
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008946707999712089
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009344292000605492
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.013392917000601301
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010797250000905478
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00872416600032011
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002216416996816406
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0026599160009936895
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003923832999134902
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0019470830011414364
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006842958002380328
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008535584001947427
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003263333001086721
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009631125001760665
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.01443887499772245
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00700404199960758
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006214417000592221
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.02292962499996065
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0049140000010083895
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007780582996929297
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008810332998109516
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0027139999983774032
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007746416998998029
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0020827089974773116
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009372707998409169
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0054166670015547425
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007522791998781031
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009431999998923857
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007919916999526322
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0071272499990300275
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.012770459001330892
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005897666997043416
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009499458003119798
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0018520830017223489
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008605125000030966
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008580000001529697
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005927750000410015
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.002920625000115251
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005934000000706874
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006669375001365552
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0035188750007364433
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008528207999916049
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003974625000410015
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008177875002729706
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009424708998267306
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007789249997586012
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008052791003137827
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00398029099960695
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0048677500017220154
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0032088749976537656
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.011445667001680704
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006803290998504963
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010089208000863437
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008044457998039434
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008441541998763569
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009743250000610715
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006211584000993753
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005902333003177773
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008654375000332948
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0054989159980323166
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006954083000891842
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008528207999916049
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008950167000875808
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0026401670002087485
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0069349580007838085
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.012921084002300631
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.010273459000018192
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008647167000162881
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00267366700063576
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0024670840030012187
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0038764999990235083
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.01040462499804562
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0018779999991238583
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.008643832999950973
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008063958001002902
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.007789082999806851
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009071332999155857
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006301959001575597
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007710833000601269
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004744292000395944
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007716749998508021
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009492875000432832
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00633074999859673
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.011881875001563458
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010771375000331318
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005912332999287173
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009469708002143307
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010116208002727944
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004486000001634238
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009375582998472964
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0091353749994596
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00870816699898569
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007795457997417543
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010815875000844244
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.012384792000375455
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010178916003496852
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008635582998977043
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008738333999644965
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005475624999235151
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0046445000007224735
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004565458002616651
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005177375001949258
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008104708998871502
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009523459000774892
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007934541998110944
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0041351250001753215
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006365957997331861
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009227333001035731
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008419582998612896
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0030206250012270175
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.01024262499777251
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0029114169992681127
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006386291999660898
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0027357500002835877
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006668041998636909
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009587167001882335
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008152499998686835
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008130042002449045
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006442249999963678
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.006616875001782319
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003202833002433181
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005576292001933325
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004246208001859486
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00399091599683743
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0027938329985772725
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0024178339990612585
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0015863750013522804
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0069668750002165325
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003495166998618515
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0020486249995883554
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008985332999145612
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008548249999876134
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0025556250002409797
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008509916999173583
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009058374998858199
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00628537499869708
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009612541001843056
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005480083000293234
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002118500000506174
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.004611583997757407
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0032136670015461277
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002709958000195911
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008734958999411901
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009075417001440655
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008581333000620361
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00892204100091476
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007959500002471032
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0060334170011628885
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005400334001024021
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0116496670016204
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006252040999243036
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009086624999326887
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004241416998411296
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.001784707998012891
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.004197791000478901
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.023932374999276362
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0060303329992166255
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0059904159970756155
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005231541999819456
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0023741250006423797
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00897133300168207
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006125750001956476
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0029703330001211725
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007673125001019798
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005062625001301058
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007908458999736467
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009242915999493562
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004421666999405716
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0032263749999401625
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.008431583999481518
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003091041999141453
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009257708999939496
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009458458000153769
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0016620420028630178
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009358416999020847
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009050332999322563
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006423792001442052
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008083709002676187
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0036446670019358862
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005825749998621177
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008926208000048064
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007575791001727339
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007640292002179194
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00963154199780547
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004317792001529597
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006440707998990547
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009402250001585344
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007803333002811996
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006366124998749001
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009969374998036074
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009800166997592896
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0025818750000325963
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008382208001421532
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00991079199957312
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0024667079997016117
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005610125001112465
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008530125000106636
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006098292000388028
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010562999999820022
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003120249999483349
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008844500000122935
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005273000002489425
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00733599999875878
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007688082998356549
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006671499999356456
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008725874999072403
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006346250000206055
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.010362917000747984
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005542416998650879
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005540875001315726
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006257000000914559
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006744165999407414
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007583790997159667
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0091994579997845
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0025327500006824266
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008344791996933054
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008698292000190122
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003907916998286964
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007906250000814907
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009605458999430994
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006590250002773246
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008779124997090548
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004613417000655318
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006949915998120559
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.009511042000667658
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007663582997338381
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008284584000648465
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009833041996898828
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0029540420000557788
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00807291699675261
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010519333001866471
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007759584001178155
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.015273249999154359
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007055915997625561
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006047042003046954
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008600583001680207
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008474624999507796
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007898666000983212
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.003661333001218736
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008552708000934217
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005197291997319553
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008002583002962638
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008935042002121918
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0062176659994293
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009051416000147583
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008950332998210797
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006714540999382734
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010317791999113979
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003720708999026101
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008598541000537807
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009851167000306305
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008803958000498824
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007753083998977672
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00926758299829089
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010089416999107925
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008775500002229819
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00929595799971139
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008615582999482285
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006259084002522286
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007015915998636046
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009114624997891951
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0033448750000388827
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00911945799816749
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008473375000903616
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006903249999595573
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006232542000361718
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008814124998025363
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.027693707997968886
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00947420900047291
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008916541999496985
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006537459001265233
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.012050332999933744
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004447834002348827
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0069754169999214355
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008847166998748435
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0031235829992510844
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007090624996635597
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006597874998988118
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0038660419995721895
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0036930419992131647
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.003661041999293957
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00430320800296613
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.002383957998972619
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002399625001999084
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008649584000522736
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00813104099870543
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0075059160008095205
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009160583002085332
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004133333997742739
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0018457080004736781
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008294499999465188
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006605582999327453
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0032830829986778554
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.003097749999142252
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008515208002791042
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006665666998742381
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0066812080003728624
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009409292000782443
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0018936250016849954
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.017754583001078572
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008440666999376845
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005460832999233389
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006880749999254476
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003486624998913612
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004319291998399422
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007748958996671718
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007478832998458529
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004776374997163657
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.004210625000268919
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00787316700007068
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0024536670025554486
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.013805292001052294
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009513458997389534
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.004683667000790592
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.017285165999055607
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006109917001595022
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0190447499990114
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009184417001961265
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007184000001871027
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.011335915998643031
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006224042001122143
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006546290998812765
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005125750001752749
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003925499997421866
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0103865000019141
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010277582998241996
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003285457998572383
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003474958000879269
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0062926249993324745
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009194166002998827
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004470749998290557
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00863016700168373
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008451124998828163
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006271791000472149
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008966792000137502
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008545292002963834
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0021547079995798413
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00376124999820604
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008308542001032038
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0056085829965013545
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009177541996905347
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004400124998937827
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007062291999318404
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008233207998273429
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006197499998961575
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007847125001717359
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00365287499880651
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005547500000830041
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005559916000493104
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.002560834000178147
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00754854199840338
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0019611249990703072
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.014942458001314662
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007175458998972317
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0035602089992607944
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007255791999341454
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008049874999414897
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005059415998402983
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008417667002504459
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.002881249998608837
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0071357919987349305
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006440208999265451
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009228124999935972
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007403750001685694
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.00976904100025422
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005887499999516876
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008044417001656257
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009609291999367997
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006432458001654595
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009127083998464514
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010365750000346452
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002244708000944229
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010972041000059107
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008011582998733502
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008659207996970508
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006023791000188794
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0069425830006366596
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00680162500066217
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.01105762500083074
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009498250001342967
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.012136708999605617
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009148666998953559
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010041791003459366
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00769399999990128
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.008084166998742148
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0075602500000968575
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008256457997049438
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.011836582998512313
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004011959001218202
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005518750000192085
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010064457997941645
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004019083000457613
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008503791999828536
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008639916999527486
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005967000000964617
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010981000003084773
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00910450000083074
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009396500001457753
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006700042002194095
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007177499999670545
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007912541001132922
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.01042987500113668
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009221082997100893
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006358333001116989
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009214791996782878
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005012749999877997
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0075536249969445635
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006845250001788372
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0028557500008901116
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007255500000610482
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.003183459000865696
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0076945420005358756
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007788167000398971
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0033696669997880235
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008430249999946682
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.001875833000667626
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00763054200069746
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010281667000526795
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0023024580004857853
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0074893339988193475
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005521125000086613
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0066690829989966005
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006801124996854924
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005433166999864625
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0069808749976800755
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009011541998916073
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00361870800043107
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0047167910015559755
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006202458000188926
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007577500000479631
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0059242909992462955
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007935125002404675
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005152166999323526
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0031393749995913822
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008796041998721194
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0032079159973363858
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0066992079991905484
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0027498330018715933
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.01120141699720989
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0034230830024171155
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.003117083000688581
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007595540999318473
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0018219590019725729
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0032551670010434464
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.012207457999465987
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00230537499737693
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.002223583000159124
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.010181459001614712
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007831167000404093
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.0090756669997063
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005115416999615263
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.00809954099895549
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009695541997643886
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009080916999664623
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00858466699719429
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006819624999479856
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008955499997682637
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009071624997886829
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00548295800035703
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005054707999079255
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005046916998253437
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007754082998872036
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007276041997101856
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008313999998790678
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006486375001259148
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008116041997709544
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00939108300008229
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006035624999640277
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.010180625002249144
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006250541002373211
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.007741792000160785
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.010750334000476869
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010202915997069795
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009048957999766571
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007360833002167055
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009887917000014568
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009804584002267802
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008546000000933418
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009131709000939736
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00841562499772408
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.010043540998594835
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006944959000975359
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008100958999420982
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006117291002738057
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008596874999057036
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006801499999710359
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006051125001249602
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008479959000396775
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008370749997993698
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009741833000589395
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008705000000190921
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005518583999219118
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006968958998186281
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0067849170009139925
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00862095800039242
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006873791000543861
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.009154208997642854
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007476541999494657
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007864666000386933
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008725875002710382
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004759208000905346
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008733416001632577
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008482624998578103
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0060864999977638945
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009060042000783142
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00968095799908042
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00709695799741894
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009003416998893954
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004729582997242687
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007954749999043997
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00862033299927134
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00840141700246022
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006606874998396961
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.013272500000311993
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009181499997794162
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006208750000951113
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00866570799917099
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007665000000997679
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0066905830026371405
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008521291998476954
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008910250002372777
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004047457998240134
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010210166001343168
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.002953082999738399
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0059947920017293654
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005990499998006271
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00891787499858765
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006901707998622442
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007241291998070665
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004221667000820162
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002121958001225721
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006399875001079636
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0059467499995662365
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007989999998244457
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006660458999249386
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008339042000443442
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007830250000552041
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010587666998617351
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.01007387500067125
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002604875000542961
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00621691700143856
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005402458002208732
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.004847291002079146
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009707375000289176
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004450249998626532
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0033584580014576204
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.010382708998804446
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005208750000747386
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007452750000084052
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005303124999045394
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008708249999472173
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0025165830011246726
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.01025724999999511
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00971041700177011
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002518625002267072
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009397416000865633
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00851429100293899
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.013768832999630831
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0072575000012875535
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00848829200185719
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0042554999999993015
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0076132920003146864
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.006438208001782186
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006431082998460624
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.006494083998404676
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.004103292001673253
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0033495829993626103
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.013219291002315003
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0031106249989534263
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0065841670002555475
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.002780957998766098
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0062747079973632935
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006678707999526523
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009791791999305133
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009690333001344698
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.001945916999829933
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.007577082997158868
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003754416000447236
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.011693665997881908
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00798216700059129
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00393212500057416
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0018669999990379438
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.0035875419998774305
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008561334001569776
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009210291998897446
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.01057987500098534
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006996625001193024
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009215499998390442
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008983791998616653
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00988770800177008
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.008460499997454463
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.00438729199959198
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.008091874999081483
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.005738125000789296
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.003597124999942025
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0028849999980593566
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009108750000450527
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007553125000413274
+    ],
+    [
+     "POST /orders/{id}/cancel",
+     200,
+     0.009255708999262424
+    ]
+   ],
+   "outcome": "cancelled"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005294834001688287
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009605708000890445
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008259374997578561
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.006749084001057781
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005178707997401943
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.003630833001807332
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "biryani",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.005866583000170067
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009073875000467524
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.01098945800185902
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.007247834000736475
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.005692792001354974
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0035175839984731283
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0077911669977766
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0076258330009295605
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.007257291999849258
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0027860839982167818
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.00935833300172817
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.008156542000506306
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.009335458002169617
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.0076285409995762166
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00870845799727249
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "juice",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.002946332999272272
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009455667001020629
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.00894637500095996
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "shawarma",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.008797833001153776
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.009332583002105821
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.009124874999542953
+    ]
+   ],
+   "outcome": "ok"
+  },
+  {
+   "stall": "chai",
+   "calls": [
+    [
+     "POST /orders",
+     201,
+     0.0053560839987767395
+    ],
+    [
+     "POST /orders/{id}/ready",
+     200,
+     0.01066687500133412
+    ],
+    [
+     "POST /orders/{id}/pickup",
+     200,
+     0.0057333750010002404
+    ]
+   ],
+   "outcome": "ok"
+  }
+ ]
+}

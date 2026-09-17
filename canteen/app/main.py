@@ -57,12 +57,16 @@ async def observe_http(request: Request, call_next):
     request_id = (request.headers.get("x-request-id") or uuid.uuid4().hex[:12])[:64]
     structlog.contextvars.clear_contextvars()
     structlog.contextvars.bind_contextvars(request_id=request_id)
-    metrics.record_demo_request(request_id)
+    if "x-request-id" in request.headers:              # E.2: only ids a client chose become label values;
+        metrics.record_demo_request(request_id)        # generated ones (healthchecks, browsers) never do
+    start = time.perf_counter()
     global REQUEST_COUNTER
     REQUEST_COUNTER += 1
     if CHAOS.slow_every_n and REQUEST_COUNTER % CHAOS.slow_every_n == 0 and request.url.path.startswith("/orders"):
-        await asyncio.sleep(CHAOS.delay_ms / 1000)      # the fault: a slow "database" on every n-th order call
-    start = time.perf_counter()
+        # The fault: a slow "database" on every n-th order call. It sits *inside* the timed
+        # window - my first version slept before `start` and the server-side histogram never
+        # saw it (REPORT D.4).
+        await asyncio.sleep(CHAOS.delay_ms / 1000)
     status = 500                                   # if call_next raises, that is what the client gets
     try:
         response: Response = await call_next(request)

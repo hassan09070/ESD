@@ -146,7 +146,9 @@ def test_slow_every_nth_request(client):
         durations.append(time.perf_counter() - t0)
     client.post("/chaos/reset")
     assert sum(1 for d in durations if d >= 0.12) == 3                       # exactly every second /orders call
-    assert sample("canteen_http_request_duration_seconds_bucket", method="GET", route="/orders/{order_id}", le="0.25") >= 3
+    slow_server_side = (sample("canteen_http_request_duration_seconds_bucket", method="GET", route="/orders/{order_id}", le="+Inf")
+                        - sample("canteen_http_request_duration_seconds_bucket", method="GET", route="/orders/{order_id}", le="0.1"))
+    assert slow_server_side >= 3                                             # the delay is inside the timed window
 
 
 def test_closed_stall_returns_503_and_counts_as_error(client):
@@ -157,3 +159,10 @@ def test_closed_stall_returns_503_and_counts_as_error(client):
     client.post("/chaos/reset")
     assert sample("canteen_http_requests_total", method="POST", route="/orders", status="503") == before + 1
     assert client.post("/chaos", json={"fail_stall": "pizza"}).status_code == 400
+
+
+def test_demo_counter_only_counts_client_chosen_request_ids(client):
+    before = sample("canteen_demo_requests_total")
+    client.get("/health")                                                    # no header: not counted (healthchecks!)
+    client.get("/stalls", headers={"X-Request-ID": "card-001"})
+    assert sample("canteen_demo_requests_total") == before + 1
