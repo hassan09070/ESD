@@ -1,7 +1,8 @@
 """canteen — a university canteen order queue.
 
-Stage 0: the application alone. No metrics, no logging config yet; those are added one
-stage at a time so each tool can be understood on its own.
+Stage 1: the app plus Prometheus metrics. Every metric is defined in app/metrics.py; this
+file only *records* them at the point where the business event happens, and exposes them
+on GET /metrics for Prometheus to scrape.
 
 The whole "business" is this state machine, one per order:
 
@@ -20,12 +21,32 @@ import time
 import uuid
 from dataclasses import asdict, dataclass
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-STALLS = ("chai", "biryani", "shawarma", "juice")   # fixed and small on purpose (stage 1 will explain why)
+from app import metrics
+from app.metrics import STALLS   # fixed and small on purpose: it is a metric label (see metrics.py)
 
 app = FastAPI(title="canteen", version="0.1.0")
+
+
+@app.middleware("http")
+async def observe_http(request: Request, call_next):
+    """The two application metrics, recorded for every request in one place.
+    `route` is the *template* (/orders/{order_id}/ready), never the real path: a label
+    per order id would be one time series per order."""
+    start = time.perf_counter()
+    status = 500                                   # if call_next raises, that is what the client gets
+    try:
+        response: Response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        route = request.scope.get("route")
+        route = route.path if route is not None else "unmatched"
+        if route != "/metrics":                    # Prometheus' own scrapes would drown the request panels
+            metrics.HTTP_REQUESTS.labels(method=request.method, route=route, status=str(status)).inc()
+            metrics.HTTP_DURATION.labels(method=request.method, route=route).observe(time.perf_counter() - start)
 
 
 @dataclass
@@ -70,6 +91,12 @@ def health() -> dict:
     return {"status": "ok", "orders": len(ORDERS)}
 
 
+@app.get("/metrics", include_in_schema=False)
+def prometheus_metrics() -> Response:
+    body, content_type = metrics.render()
+    return Response(content=body, media_type=content_type)
+
+
 @app.get("/stalls")
 def stalls() -> dict:
     """Queue length per stall: how many orders are waiting to be prepared right now."""
@@ -82,6 +109,8 @@ def place_order(body: NewOrder) -> dict:
         raise HTTPException(400, f"unknown stall; choose one of {STALLS}")
     order = Order(order_id=uuid.uuid4().hex[:8], stall=body.stall, item=body.item, placed_at=time.time())
     ORDERS[order.order_id] = order
+    metrics.ORDERS_PLACED.labels(stall=order.stall).inc()      # Counter: 20 -> 21
+    metrics.ORDERS_WAITING.labels(stall=order.stall).inc()     # Gauge: one more in the queue
     return asdict(order)
 
 
@@ -94,6 +123,10 @@ def show_order(order_id: str) -> dict:
 def mark_ready(order_id: str) -> dict:
     order = transition(get_order(order_id), ("waiting",), "ready")
     order.ready_at = time.time()
+    metrics.ORDERS_WAITING.labels(stall=order.stall).dec()     # Gauge: one fewer in the queue
+    prep = order.ready_at - order.placed_at
+    metrics.ORDER_PREP.labels(stall=order.stall).observe(prep)          # Histogram: which bucket
+    metrics.ORDER_PREP_SUMMARY.labels(stall=order.stall).observe(prep)  # Summary: sum and count
     return asdict(order)
 
 
@@ -101,11 +134,16 @@ def mark_ready(order_id: str) -> dict:
 def pick_up(order_id: str) -> dict:
     order = transition(get_order(order_id), ("ready",), "picked_up")
     order.picked_up_at = time.time()
+    metrics.PICKUP_DELAY.labels(stall=order.stall).observe(order.picked_up_at - order.ready_at)
     return asdict(order)
 
 
 @app.post("/orders/{order_id}/cancel")
 def cancel(order_id: str) -> dict:
+    was_waiting = get_order(order_id).state == "waiting"
     order = transition(get_order(order_id), ("waiting", "ready"), "cancelled")
     order.cancelled_at = time.time()
+    if was_waiting:
+        metrics.ORDERS_WAITING.labels(stall=order.stall).dec()
+    metrics.ORDERS_CANCELLED.labels(stall=order.stall).inc()
     return asdict(order)
