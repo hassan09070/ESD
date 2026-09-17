@@ -1,0 +1,36 @@
+
+--- before: flag off (2026-09-17T07:58:51Z) ---
+  count(canteen_demo_requests_total)                           1
+  count(last_over_time(canteen_demo_requests_total[15m]))      114
+  series API canteen_demo_requests_total (30m)                 114
+  prometheus_tsdb_head_series                                  3,235
+  count({__name__=~"canteen_.*"})                              229
+
+==> docker compose up -d app with CANTEEN_DEMO_CARDINALITY=1
+
+--- flag on, app re-created, no requests yet (2026-09-17T07:59:17Z) ---
+  count(canteen_demo_requests_total)                           0
+  count(last_over_time(canteen_demo_requests_total[15m]))      114
+  series API canteen_demo_requests_total (30m)                 114
+  prometheus_tsdb_head_series                                  3,273
+  count({__name__=~"canteen_.*"})                              25
+==> sending 100 requests with 100 distinct X-Request-IDs
+
+--- flag on, after 100 requests (2026-09-17T07:59:29Z) ---
+  count(canteen_demo_requests_total)                           100
+  count(last_over_time(canteen_demo_requests_total[15m]))      114
+  series API canteen_demo_requests_total (30m)                 114
+  prometheus_tsdb_head_series                                  3,273
+  count({__name__=~"canteen_.*"})                              138
+
+==> docker compose up -d app with CANTEEN_DEMO_CARDINALITY=0
+==> sending 20 requests with the label removed
+
+--- flag off, after 20 requests (2026-09-17T07:59:55Z) ---
+  count(canteen_demo_requests_total)                           1
+  count(last_over_time(canteen_demo_requests_total[15m]))      114
+  series API canteen_demo_requests_total (30m)                 114
+  prometheus_tsdb_head_series                                  3,311
+  count({__name__=~"canteen_.*"})                              39
+
+results written: /Users/hassan/ESD/canteen/scripts/results/cardinality_20260917T075955Z.json

@@ -1,0 +1,30 @@
+{
+ "0_before": {
+  "count(canteen_demo_requests_total)": 1.0,
+  "count(last_over_time(canteen_demo_requests_total[15m]))": 114.0,
+  "series API canteen_demo_requests_total (30m)": 114,
+  "prometheus_tsdb_head_series": 3235.0,
+  "count({__name__=~\"canteen_.*\"})": 229.0
+ },
+ "1_flag_on_idle": {
+  "count(canteen_demo_requests_total)": 0.0,
+  "count(last_over_time(canteen_demo_requests_total[15m]))": 114.0,
+  "series API canteen_demo_requests_total (30m)": 114,
+  "prometheus_tsdb_head_series": 3273.0,
+  "count({__name__=~\"canteen_.*\"})": 25.0
+ },
+ "2_flag_on_100_requests": {
+  "count(canteen_demo_requests_total)": 100.0,
+  "count(last_over_time(canteen_demo_requests_total[15m]))": 114.0,
+  "series API canteen_demo_requests_total (30m)": 114,
+  "prometheus_tsdb_head_series": 3273.0,
+  "count({__name__=~\"canteen_.*\"})": 138.0
+ },
+ "3_flag_off_20_requests": {
+  "count(canteen_demo_requests_total)": 1.0,
+  "count(last_over_time(canteen_demo_requests_total[15m]))": 114.0,
+  "series API canteen_demo_requests_total (30m)": 114,
+  "prometheus_tsdb_head_series": 3311.0,
+  "count({__name__=~\"canteen_.*\"})": 39.0
+ }
+}

@@ -1,0 +1,73 @@
+# slow, run 2 after the fix (scripts/experiment_fault.sh slow, concurrency 4)
+=== stage baseline 2026-09-17T07:52:09Z -> 2026-09-17T07:54:12Z (window 123s) ===
+Prometheus (instant query at window end):
+  HTTP p50 all routes (s)          0.003
+  HTTP p95 all routes (s)          0.005
+  HTTP p99 all routes (s)          0.005
+  HTTP mean (s)                    0.002
+  HTTP requests (count)            654.412
+  HTTP 5xx (count)                 0.000
+  orders placed (count)            224.505
+  orders placed biryani (count)    48.132
+  orders cancelled (count)         21.233
+  orders waiting (avg gauge)       2.680
+  prep p95 all stalls (s)          4.626
+  prep mean, Summary (s)           1.748
+  pickup delay p95 (s)             0.963
+  machine CPU busy % (avg)         2.951
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"http_request" and duration_ms > 400       0
+  event:"http_request" and status_code >= 500      0
+  event:"http_request"                             646
+  event:"order_placed"                             222
+  event:"order_placed" and stall:"biryani"         47
+  level:"error"                                    0
+  event:"chaos_changed"                            1
+=== stage fault 2026-09-17T07:54:22Z -> 2026-09-17T07:56:25Z (window 123s) ===
+Prometheus (instant query at window end):
+  HTTP p50 all routes (s)          0.003
+  HTTP p95 all routes (s)          0.873
+  HTTP p99 all routes (s)          0.975
+  HTTP mean (s)                    0.101
+  HTTP requests (count)            584.381
+  HTTP 5xx (count)                 0.000
+  orders placed (count)            199.920
+  orders placed biryani (count)    43.060
+  orders cancelled (count)         19.479
+  orders waiting (avg gauge)       2.800
+  prep p95 all stalls (s)          4.661
+  prep mean, Summary (s)           1.819
+  pickup delay p95 (s)             1.590
+  machine CPU busy % (avg)         2.952
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"http_request" and duration_ms > 400       115
+  event:"http_request" and status_code >= 500      0
+  event:"http_request"                             571
+  event:"order_placed"                             196
+  event:"order_placed" and stall:"biryani"         42
+  level:"error"                                    0
+  event:"chaos_changed"                            1
+=== stage recovery 2026-09-17T07:56:35Z -> 2026-09-17T07:58:38Z (window 123s) ===
+Prometheus (instant query at window end):
+  HTTP p50 all routes (s)          0.003
+  HTTP p95 all routes (s)          0.005
+  HTTP p99 all routes (s)          0.005
+  HTTP mean (s)                    0.002
+  HTTP requests (count)            662.133
+  HTTP 5xx (count)                 0.000
+  orders placed (count)            221.394
+  orders placed biryani (count)    46.124
+  orders cancelled (count)         20.499
+  orders waiting (avg gauge)       3.042
+  prep p95 all stalls (s)          4.627
+  prep mean, Summary (s)           1.753
+  pickup delay p95 (s)             0.968
+  machine CPU busy % (avg)         2.917
+Elasticsearch document counts (Kibana KQL equivalents):
+  event:"http_request" and duration_ms > 400       0
+  event:"http_request" and status_code >= 500      0
+  event:"http_request"                             605
+  event:"order_placed"                             211
+  event:"order_placed" and stall:"biryani"         46
+  level:"error"                                    0
+  event:"chaos_changed"                            0
