@@ -1,0 +1,11 @@
+# Every *.json in /var/lib/grafana/dashboards (bind-mounted from monitoring/grafana/dashboards)
+# is loaded at startup and re-read every 30 s, so editing a file updates the dashboard.
+apiVersion: 1
+providers:
+  - name: canteen
+    folder: canteen
+    type: file
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

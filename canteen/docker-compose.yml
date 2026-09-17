@@ -1,4 +1,4 @@
-# canteen stack. Stage 2: the app and Prometheus.
+# canteen stack: the app, Prometheus, Grafana, Node Exporter.
 services:
   app:
     build:
@@ -25,5 +25,23 @@ services:
     depends_on:
       - app
 
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: canteen-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana          # users/prefs only; dashboards come from the files above
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
 volumes:
   prom_data:
+  grafana_data:
