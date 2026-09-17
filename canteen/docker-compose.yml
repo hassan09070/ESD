@@ -22,8 +22,27 @@ services:
       - prom_data:/prometheus            # the TSDB survives `docker compose down`, not `down -v`
     ports:
       - "9090:9090"
+    extra_hosts:
+      - "node-exporter:172.17.0.1"      # docker0 gateway = the host/VM as seen from a bridge network
     depends_on:
       - app
+      - node-exporter
+
+  # Node Exporter reports the kernel it runs on. pid/uts/network namespaces are the host's
+  # so processes, hostname and network interfaces are the machine's, not this container's.
+  # On Docker Desktop (Mac) "the machine" is the Docker Linux VM: nodename=docker-desktop.
+  # A host-network container has no compose DNS name, so Prometheus reaches it through the
+  # docker0 gateway (extra_hosts on the prometheus service); port 9100 is not published.
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: canteen-node-exporter
+    pid: host
+    uts: host
+    network_mode: host
+    command:
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+      # default list minus "overlay" so the container's / (the VM disk) is reported
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$$
 
   grafana:
     image: grafana/grafana:12.1.0

@@ -8,3 +8,11 @@ scrape_configs:
   - job_name: canteen            # becomes the `job` label on every series
     static_configs:
       - targets: ["app:8000"]    # compose DNS name of the app container
+
+  - job_name: node               # Node Exporter: CPU, memory, disk, network of the machine
+    static_configs:
+      - targets: ["node-exporter:9100"]   # resolved by extra_hosts in docker-compose.yml
+
+  - job_name: prometheus         # Prometheus itself: prometheus_tsdb_head_series for Part E.2
+    static_configs:
+      - targets: ["localhost:9090"]
