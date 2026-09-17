@@ -1,8 +1,8 @@
 """canteen — a university canteen order queue.
 
-Stage 1: the app plus Prometheus metrics. Every metric is defined in app/metrics.py; this
-file only *records* them at the point where the business event happens, and exposes them
-on GET /metrics for Prometheus to scrape.
+Metrics are defined in app/metrics.py and only *recorded* here, at the point where the
+business event happens; GET /metrics exposes them for Prometheus. Logging is configured in
+app/logging_config.py; every business event also writes one JSON line to stdout.
 
 The whole "business" is this state machine, one per order:
 
@@ -17,17 +17,32 @@ this app exists to be observed, not to be a real ordering system.
 """
 from __future__ import annotations
 
+import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 from dataclasses import asdict, dataclass
 
+import structlog
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from app import metrics
+from app.logging_config import setup_logging
 from app.metrics import STALLS   # fixed and small on purpose: it is a metric label (see metrics.py)
 
-app = FastAPI(title="canteen", version="0.1.0")
+setup_logging()
+log = structlog.get_logger()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    log.info("startup", msg="canteen api started", stalls=list(STALLS), demo_cardinality=metrics.DEMO_CARDINALITY)
+    yield
+    log.info("shutdown", msg="canteen api stopped")
+
+
+app = FastAPI(title="canteen", version="0.1.0", lifespan=lifespan)
 
 
 @app.middleware("http")
@@ -35,18 +50,35 @@ async def observe_http(request: Request, call_next):
     """The two application metrics, recorded for every request in one place.
     `route` is the *template* (/orders/{order_id}/ready), never the real path: a label
     per order id would be one time series per order."""
+    # request_id: taken from the client's X-Request-ID header if it sent one (the load
+    # generator and the E.2 script do), else generated. Bound as a context variable so every
+    # log line written while handling this request carries it, and echoed back in the response.
+    request_id = (request.headers.get("x-request-id") or uuid.uuid4().hex[:12])[:64]
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(request_id=request_id)
+    metrics.record_demo_request(request_id)
     start = time.perf_counter()
     status = 500                                   # if call_next raises, that is what the client gets
     try:
         response: Response = await call_next(request)
         status = response.status_code
+        response.headers["X-Request-ID"] = request_id
         return response
+    except Exception as e:  # noqa: BLE001
+        log.error("error", msg="unhandled exception", exc_type=type(e).__name__, exc_message=str(e)[:200], exc_info=True)
+        raise
     finally:
+        duration = time.perf_counter() - start
         route = request.scope.get("route")
         route = route.path if route is not None else "unmatched"
         if route != "/metrics":                    # Prometheus' own scrapes would drown the request panels
             metrics.HTTP_REQUESTS.labels(method=request.method, route=route, status=str(status)).inc()
-            metrics.HTTP_DURATION.labels(method=request.method, route=route).observe(time.perf_counter() - start)
+            metrics.HTTP_DURATION.labels(method=request.method, route=route).observe(duration)
+        if route not in ("/metrics", "/health"):   # ... and the healthcheck would fill Kibana with noise
+            log.log(logging.ERROR if status >= 500 else logging.INFO, "http_request",
+                    msg=f"{request.method} {request.url.path} -> {status}", method=request.method, path=request.url.path,
+                    route=route, status_code=status, duration_ms=round(duration * 1000, 1))
+        structlog.contextvars.clear_contextvars()
 
 
 @dataclass
@@ -111,6 +143,8 @@ def place_order(body: NewOrder) -> dict:
     ORDERS[order.order_id] = order
     metrics.ORDERS_PLACED.labels(stall=order.stall).inc()      # Counter: 20 -> 21
     metrics.ORDERS_WAITING.labels(stall=order.stall).inc()     # Gauge: one more in the queue
+    log.info("order_placed", msg=f"order placed at {order.stall}", order_id=order.order_id, stall=order.stall,
+             queue_length=stalls()[order.stall])
     return asdict(order)
 
 
@@ -127,6 +161,8 @@ def mark_ready(order_id: str) -> dict:
     prep = order.ready_at - order.placed_at
     metrics.ORDER_PREP.labels(stall=order.stall).observe(prep)          # Histogram: which bucket
     metrics.ORDER_PREP_SUMMARY.labels(stall=order.stall).observe(prep)  # Summary: sum and count
+    log.log(logging.WARNING if prep > 300 else logging.INFO, "order_ready", msg=f"order ready after {prep:.1f} s",
+            order_id=order.order_id, stall=order.stall, prep_s=round(prep, 2))
     return asdict(order)
 
 
@@ -134,7 +170,10 @@ def mark_ready(order_id: str) -> dict:
 def pick_up(order_id: str) -> dict:
     order = transition(get_order(order_id), ("ready",), "picked_up")
     order.picked_up_at = time.time()
-    metrics.PICKUP_DELAY.labels(stall=order.stall).observe(order.picked_up_at - order.ready_at)
+    delay = order.picked_up_at - order.ready_at
+    metrics.PICKUP_DELAY.labels(stall=order.stall).observe(delay)
+    log.info("order_picked_up", msg=f"order picked up after waiting {delay:.1f} s at the counter",
+             order_id=order.order_id, stall=order.stall, pickup_delay_s=round(delay, 2))
     return asdict(order)
 
 
@@ -146,4 +185,6 @@ def cancel(order_id: str) -> dict:
     if was_waiting:
         metrics.ORDERS_WAITING.labels(stall=order.stall).dec()
     metrics.ORDERS_CANCELLED.labels(stall=order.stall).inc()
+    log.warning("order_cancelled", msg="order cancelled", order_id=order.order_id, stall=order.stall,
+                was_ready=not was_waiting)
     return asdict(order)

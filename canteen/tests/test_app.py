@@ -87,3 +87,47 @@ def test_http_metrics_use_route_templates(client):
     assert 'canteen_http_requests_total{method="GET",route="/orders/{order_id}",status="404"}' in text
     assert oid not in text                                                        # never the real path
     assert 'route="/metrics"' not in text                                         # scrapes are not counted
+
+
+# ----------------------------------------------------------------------------- stage 5: logs
+def captured_lines(client, do):
+    """Run `do(client)` with a tap on the root logger; return the JSON lines it produced."""
+    import io
+    import json
+    import logging
+
+    buf = io.StringIO()
+    tap = logging.StreamHandler(buf)
+    tap.setFormatter(logging.getLogger().handlers[0].formatter)
+    logging.getLogger().addHandler(tap)
+    try:
+        do(client)
+    finally:
+        logging.getLogger().removeHandler(tap)
+    lines = [json.loads(l) for l in buf.getvalue().splitlines() if l.strip()]
+    return [l for l in lines if l["event"] in APP_EVENTS]        # httpx (the test client) logs at INFO too
+
+
+APP_EVENTS = {"startup", "http_request", "order_placed", "order_ready", "order_picked_up", "order_cancelled", "error"}
+
+
+def test_every_log_line_is_json_with_required_fields(client):
+    def flow(c):
+        oid = c.post("/orders", json={"stall": "chai", "item": "SECRET-NOTE"}, headers={"X-Request-ID": "req-42"}).json()["order_id"]
+        c.post(f"/orders/{oid}/ready")
+        c.get("/health")
+    lines = captured_lines(client, flow)
+    assert lines and all({"ts", "level", "service", "event", "msg"} <= set(l) for l in lines)
+    events = [l["event"] for l in lines]
+    assert events == ["order_placed", "http_request", "order_ready", "http_request"]   # /health is not logged
+    placed = lines[0]
+    assert placed["request_id"] == "req-42" and placed["stall"] == "chai" and placed["service"] == "canteen"
+    assert lines[1]["request_id"] == "req-42" and lines[1]["route"] == "/orders" and lines[1]["status_code"] == 201
+    assert "SECRET-NOTE" not in "".join(map(str, lines))                     # item text never reaches the logs
+
+
+def test_request_id_header_is_generated_and_bounded(client):
+    r = client.get("/stalls")
+    assert len(r.headers["X-Request-ID"]) == 12
+    r = client.get("/stalls", headers={"X-Request-ID": "x" * 500})
+    assert r.headers["X-Request-ID"] == "x" * 64
