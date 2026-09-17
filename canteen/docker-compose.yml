@@ -1,0 +1,29 @@
+# canteen stack. Stage 2: the app and Prometheus.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: canteen-app
+    environment:
+      CANTEEN_DEMO_CARDINALITY: ${CANTEEN_DEMO_CARDINALITY:-0}   # Part E.2 toggle; re-create the app to apply
+    ports:
+      - "8000:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: canteen-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom_data:/prometheus            # the TSDB survives `docker compose down`, not `down -v`
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+
+volumes:
+  prom_data:

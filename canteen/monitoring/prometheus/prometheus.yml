@@ -1,0 +1,10 @@
+# Prometheus pulls ("scrapes") GET /metrics from each target every 5 s and stores every
+# sample in its own time-series database. 5 s means a 2-minute experiment stage holds
+# 24 samples per series. Retention is set on the command line in docker-compose.yml.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: canteen            # becomes the `job` label on every series
+    static_configs:
+      - targets: ["app:8000"]    # compose DNS name of the app container
