@@ -17,6 +17,7 @@ this app exists to be observed, not to be a real ordering system.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 import uuid
@@ -57,6 +58,10 @@ async def observe_http(request: Request, call_next):
     structlog.contextvars.clear_contextvars()
     structlog.contextvars.bind_contextvars(request_id=request_id)
     metrics.record_demo_request(request_id)
+    global REQUEST_COUNTER
+    REQUEST_COUNTER += 1
+    if CHAOS.slow_every_n and REQUEST_COUNTER % CHAOS.slow_every_n == 0 and request.url.path.startswith("/orders"):
+        await asyncio.sleep(CHAOS.delay_ms / 1000)      # the fault: a slow "database" on every n-th order call
     start = time.perf_counter()
     status = 500                                   # if call_next raises, that is what the client gets
     try:
@@ -101,6 +106,19 @@ class NewOrder(BaseModel):
     item: str = Field(min_length=1, max_length=40)
 
 
+# ------------------------------------------------------------------ chaos (Part E.1)
+# Faults are toggled over HTTP, like Lab 1's chaos endpoints, so an experiment needs no
+# restart and the "remove the problem" step is one request.
+class Chaos(BaseModel):
+    slow_every_n: int = Field(0, ge=0, description="delay every n-th request (0 = off); the brief's example is 5")
+    delay_ms: int = Field(500, ge=0, le=5000, description="how long the delayed requests sleep")
+    fail_stall: str | None = Field(None, description="this stall answers 503 'closed' to every new order")
+
+
+CHAOS = Chaos()
+REQUEST_COUNTER = 0
+
+
 def get_order(order_id: str) -> Order:
     order = ORDERS.get(order_id)
     if order is None:
@@ -139,6 +157,8 @@ def stalls() -> dict:
 def place_order(body: NewOrder) -> dict:
     if body.stall not in STALLS:
         raise HTTPException(400, f"unknown stall; choose one of {STALLS}")
+    if body.stall == CHAOS.fail_stall:
+        raise HTTPException(503, f"{body.stall} is closed")           # the second fault: a stall that is down
     order = Order(order_id=uuid.uuid4().hex[:8], stall=body.stall, item=body.item, placed_at=time.time())
     ORDERS[order.order_id] = order
     metrics.ORDERS_PLACED.labels(stall=order.stall).inc()      # Counter: 20 -> 21
@@ -188,3 +208,28 @@ def cancel(order_id: str) -> dict:
     log.warning("order_cancelled", msg="order cancelled", order_id=order.order_id, stall=order.stall,
                 was_ready=not was_waiting)
     return asdict(order)
+
+
+# --------------------------------------------------------------------------- chaos routes
+@app.get("/chaos")
+def chaos_status() -> dict:
+    return CHAOS.model_dump()
+
+
+@app.post("/chaos")
+def chaos_set(body: Chaos) -> dict:
+    """Replace the chaos settings. `{"slow_every_n": 5, "delay_ms": 500}` is the assignment's example fault."""
+    global CHAOS
+    if body.fail_stall is not None and body.fail_stall not in STALLS:
+        raise HTTPException(400, f"unknown stall; choose one of {STALLS}")
+    CHAOS = body
+    log.warning("chaos_changed", msg="chaos settings changed", **CHAOS.model_dump())
+    return CHAOS.model_dump()
+
+
+@app.post("/chaos/reset")
+def chaos_reset() -> dict:
+    global CHAOS
+    CHAOS = Chaos()
+    log.warning("chaos_changed", msg="chaos reset", **CHAOS.model_dump())
+    return CHAOS.model_dump()

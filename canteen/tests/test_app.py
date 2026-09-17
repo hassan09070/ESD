@@ -108,7 +108,7 @@ def captured_lines(client, do):
     return [l for l in lines if l["event"] in APP_EVENTS]        # httpx (the test client) logs at INFO too
 
 
-APP_EVENTS = {"startup", "http_request", "order_placed", "order_ready", "order_picked_up", "order_cancelled", "error"}
+APP_EVENTS = {"startup", "http_request", "order_placed", "order_ready", "order_picked_up", "order_cancelled", "chaos_changed", "error"}
 
 
 def test_every_log_line_is_json_with_required_fields(client):
@@ -131,3 +131,29 @@ def test_request_id_header_is_generated_and_bounded(client):
     assert len(r.headers["X-Request-ID"]) == 12
     r = client.get("/stalls", headers={"X-Request-ID": "x" * 500})
     assert r.headers["X-Request-ID"] == "x" * 64
+
+
+# ----------------------------------------------------------------------------- stage 8: chaos
+def test_slow_every_nth_request(client):
+    import time
+
+    client.post("/chaos/reset")
+    assert client.post("/chaos", json={"slow_every_n": 2, "delay_ms": 120}).json()["slow_every_n"] == 2
+    durations = []
+    for _ in range(6):
+        t0 = time.perf_counter()
+        client.get("/orders/nope")
+        durations.append(time.perf_counter() - t0)
+    client.post("/chaos/reset")
+    assert sum(1 for d in durations if d >= 0.12) == 3                       # exactly every second /orders call
+    assert sample("canteen_http_request_duration_seconds_bucket", method="GET", route="/orders/{order_id}", le="0.25") >= 3
+
+
+def test_closed_stall_returns_503_and_counts_as_error(client):
+    client.post("/chaos", json={"fail_stall": "juice"})
+    before = sample("canteen_http_requests_total", method="POST", route="/orders", status="503")
+    assert client.post("/orders", json={"stall": "juice", "item": "mango"}).status_code == 503
+    assert client.post("/orders", json={"stall": "chai", "item": "karak"}).status_code == 201
+    client.post("/chaos/reset")
+    assert sample("canteen_http_requests_total", method="POST", route="/orders", status="503") == before + 1
+    assert client.post("/chaos", json={"fail_stall": "pizza"}).status_code == 400
