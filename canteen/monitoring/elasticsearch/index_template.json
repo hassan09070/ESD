@@ -1,0 +1,39 @@
+{
+  "_comment": "Index template for canteen-logs-*: binds the ILM policy, 1 shard / 0 replicas (single node), and explicit types for the fields the Kibana searches use. Anything else is mapped dynamically.",
+  "index_patterns": ["canteen-logs-*"],
+  "priority": 500,
+  "template": {
+    "settings": {
+      "index.lifecycle.name": "canteen-logs-policy",
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "refresh_interval": "5s"
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": {"type": "date"},
+        "ts": {"type": "date"},
+        "level": {"type": "keyword"},
+        "service": {"type": "keyword"},
+        "event": {"type": "keyword"},
+        "msg": {"type": "text"},
+        "message": {"type": "text"},
+        "request_id": {"type": "keyword"},
+        "order_id": {"type": "keyword"},
+        "stall": {"type": "keyword"},
+        "method": {"type": "keyword"},
+        "path": {"type": "keyword"},
+        "route": {"type": "keyword"},
+        "status_code": {"type": "integer"},
+        "duration_ms": {"type": "float"},
+        "prep_s": {"type": "float"},
+        "pickup_delay_s": {"type": "float"},
+        "queue_length": {"type": "integer"},
+        "was_ready": {"type": "boolean"},
+        "exc_type": {"type": "keyword"},
+        "container": {"properties": {"id": {"type": "keyword"}, "name": {"type": "keyword"}}}
+      }
+    }
+  }
+}

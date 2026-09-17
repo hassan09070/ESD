@@ -1,4 +1,12 @@
-# canteen stack: the app, Prometheus, Grafana, Node Exporter.
+# canteen stack: the app + metrics (Prometheus, Grafana, Node Exporter) + logs (Filebeat,
+# Elasticsearch, Kibana) + a one-shot `setup` job that installs the ILM policy, the index
+# template and the Kibana data view before Filebeat ships the first line.
+#
+# Named volumes survive `docker compose down` but not `down -v`: prom_data (TSDB, 7 d
+# retention), grafana_data (users/prefs), es_data (indices, deleted by ILM after 7 d),
+# filebeat_registry (read offsets, so a Filebeat restart does not re-ship old lines).
+# The app's raw stdout is kept by Docker's json-file driver (3 x 10 MB) and removed with
+# the container.
 services:
   app:
     build:
@@ -9,6 +17,11 @@ services:
       CANTEEN_DEMO_CARDINALITY: ${CANTEEN_DEMO_CARDINALITY:-0}   # Part E.2 toggle; re-create the app to apply
     ports:
       - "8000:8000"
+    logging:
+      driver: json-file            # the file Filebeat reads: /var/lib/docker/containers/<id>/<id>-json.log
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   prometheus:
     image: prom/prometheus:v3.5.0
@@ -61,6 +74,93 @@ services:
     depends_on:
       - prometheus
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    container_name: canteen-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"   # local classroom stack only; never expose 9200 like this
+      xpack.ml.enabled: "false"
+      ES_JAVA_OPTS: "-Xms768m -Xmx768m"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+    deploy:
+      resources:
+        limits:
+          memory: 1500m
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.18.0
+    container_name: canteen-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      TELEMETRY_ENABLED: "false"
+      XPACK_SECURITY_ENCRYPTIONKEY: canteen-local-only-key-not-for-production-use
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: canteen-local-only-key-not-for-production-use
+      XPACK_REPORTING_ENCRYPTIONKEY: canteen-local-only-key-not-for-production-use
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status | grep -q '\"level\":\"available\"' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 40s
+
+  # One-shot: ILM policy + index template + Kibana data view (scripts/setup_elastic.sh). Exits 0.
+  setup:
+    image: curlimages/curl:8.14.1
+    container_name: canteen-setup
+    entrypoint: ["/bin/sh", "/setup/setup_elastic.sh"]
+    environment:
+      ES_URL: http://elasticsearch:9200
+      KIBANA_URL: http://kibana:5601
+      ILM_POLICY_FILE: /setup/ilm_policy.json
+      INDEX_TEMPLATE_FILE: /setup/index_template.json
+    volumes:
+      - ./scripts/setup_elastic.sh:/setup/setup_elastic.sh:ro
+      - ./monitoring/elasticsearch/ilm_policy.json:/setup/ilm_policy.json:ro
+      - ./monitoring/elasticsearch/index_template.json:/setup/index_template.json:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_started
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.18.0
+    container_name: canteen-filebeat
+    user: root                          # needs to read /var/lib/docker/containers and the socket
+    command: ["filebeat", "-e", "--strict.perms=false"]
+    volumes:
+      - ./monitoring/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro   # the json-file logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro               # container names for autodiscover
+      - filebeat_registry:/usr/share/filebeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+
 volumes:
   prom_data:
   grafana_data:
+  es_data:
+  filebeat_registry:

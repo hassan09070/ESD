@@ -1,0 +1,67 @@
+# Filebeat: ship the app container's JSON stdout to Elasticsearch.
+#
+# Per line:  Docker json-file wrapper  {"log": "<our JSON>\n", "stream": "stdout", "time": ...}
+#         -> filestream + container parser : unwraps the wrapper into `message`
+#         -> decode_json_fields            : parses `message` into top-level fields (event, order_id, ...)
+#         -> timestamp                     : @timestamp := our `ts` (when the app wrote the line)
+#         -> drop_fields                   : remove Beat/Docker noise we never search
+#         -> index canteen-logs-YYYY.MM.DD  (mapping + ILM installed by scripts/setup_elastic.sh)
+#
+# Autodiscover (docker provider) watches the Docker API and tails only the container named
+# canteen-app: Prometheus/Grafana/ES/Kibana output never enters the index, and a re-created
+# app container (new id) is picked up automatically.
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: false
+      templates:
+        - condition:
+            equals:
+              docker.container.name: canteen-app
+          config:
+            - type: filestream
+              id: canteen-app-${data.docker.container.id}
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              parsers:
+                - container:
+                    stream: all
+                    format: docker
+              prospector.scanner.symlinks: true
+
+processors:
+  - add_docker_metadata:
+      host: unix:///var/run/docker.sock
+  - decode_json_fields:
+      fields: ["message"]
+      target: ""
+      overwrite_keys: true
+      add_error_key: true
+      max_depth: 2
+  - timestamp:
+      field: ts
+      layouts:
+        - "2006-01-02T15:04:05.999999Z"
+        - "2006-01-02T15:04:05.999Z"
+        - "2006-01-02T15:04:05Z"
+      timezone: UTC
+      ignore_missing: true
+      ignore_failure: true
+  - drop_fields:
+      fields: ["agent", "ecs", "input", "log", "host", "docker", "container.labels", "container.image"]
+      ignore_missing: true
+
+# We install our own index template + ILM policy (scripts/setup_elastic.sh); Filebeat's
+# default ECS template maps `event` as an object and would reject our string `event`.
+setup.template.enabled: false
+setup.ilm.enabled: false
+setup.template.name: "canteen-logs"        # required by Filebeat when index: is customised
+setup.template.pattern: "canteen-logs-*"
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  index: "canteen-logs-%{+yyyy.MM.dd}"
+
+logging.level: info
+logging.to_stderr: true
+logging.metrics.enabled: false
