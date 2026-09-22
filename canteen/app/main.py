@@ -1,4 +1,4 @@
-"""canteen — a university canteen order queue.
+"""canteen — order queue for a university's food shops.
 
 Metrics are defined in app/metrics.py and only *recorded* here, at the point where the
 business event happens; GET /metrics exposes them for Prometheus. Logging is configured in
@@ -11,9 +11,11 @@ The whole "business" is this state machine, one per order:
                      |                             |
                      +---- POST /orders/{id}/cancel ----> cancelled
 
-Four stalls share the canteen; each order belongs to exactly one stall. Everything lives
-in one in-memory dict, so restarting the process forgets every order. That is deliberate:
-this app exists to be observed, not to be a real ordering system.
+Four shops share the campus: sky_dhaba (chai, pharata), tapal (biryani, pulao), cafetogo
+(burger, roll) and grito (corn, ice cream). Each order belongs to exactly one shop; `item` is
+free text and is never validated against a menu (scripts/load.py orders from the one above).
+Everything lives in one in-memory dict, so restarting the process forgets every order. That is
+deliberate: this app exists to be observed, not to be a real ordering system.
 """
 from __future__ import annotations
 
@@ -30,7 +32,7 @@ from pydantic import BaseModel, Field
 
 from app import metrics
 from app.logging_config import setup_logging
-from app.metrics import STALLS   # fixed and small on purpose: it is a metric label (see metrics.py)
+from app.metrics import SHOPS   # fixed and small on purpose: it is a metric label (see metrics.py)
 
 setup_logging()
 log = structlog.get_logger()
@@ -38,7 +40,7 @@ log = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    log.info("startup", msg="canteen api started", stalls=list(STALLS), demo_cardinality=metrics.DEMO_CARDINALITY)
+    log.info("startup", msg="canteen api started", shops=list(SHOPS), demo_cardinality=metrics.DEMO_CARDINALITY)
     yield
     log.info("shutdown", msg="canteen api stopped")
 
@@ -93,7 +95,7 @@ async def observe_http(request: Request, call_next):
 @dataclass
 class Order:
     order_id: str
-    stall: str
+    shop: str
     item: str
     state: str = "waiting"                 # waiting | ready | picked_up | cancelled
     placed_at: float = 0.0                 # time.time() when each transition happened
@@ -106,7 +108,7 @@ ORDERS: dict[str, Order] = {}              # the entire database
 
 
 class NewOrder(BaseModel):
-    stall: str
+    shop: str
     item: str = Field(min_length=1, max_length=40)
 
 
@@ -116,7 +118,7 @@ class NewOrder(BaseModel):
 class Chaos(BaseModel):
     slow_every_n: int = Field(0, ge=0, description="delay every n-th request (0 = off); the brief's example is 5")
     delay_ms: int = Field(500, ge=0, le=5000, description="how long the delayed requests sleep")
-    fail_stall: str | None = Field(None, description="this stall answers 503 'closed' to every new order")
+    fail_shop: str | None = Field(None, description="this shop answers 503 'closed' to every new order")
 
 
 CHAOS = Chaos()
@@ -151,24 +153,24 @@ def prometheus_metrics() -> Response:
     return Response(content=body, media_type=content_type)
 
 
-@app.get("/stalls")
-def stalls() -> dict:
-    """Queue length per stall: how many orders are waiting to be prepared right now."""
-    return {stall: sum(1 for o in ORDERS.values() if o.stall == stall and o.state == "waiting") for stall in STALLS}
+@app.get("/shops")
+def shops() -> dict:
+    """Queue length per shop: how many orders are waiting to be prepared right now."""
+    return {shop: sum(1 for o in ORDERS.values() if o.shop == shop and o.state == "waiting") for shop in SHOPS}
 
 
 @app.post("/orders", status_code=201)
 def place_order(body: NewOrder) -> dict:
-    if body.stall not in STALLS:
-        raise HTTPException(400, f"unknown stall; choose one of {STALLS}")
-    if body.stall == CHAOS.fail_stall:
-        raise HTTPException(503, f"{body.stall} is closed")           # the second fault: a stall that is down
-    order = Order(order_id=uuid.uuid4().hex[:8], stall=body.stall, item=body.item, placed_at=time.time())
+    if body.shop not in SHOPS:
+        raise HTTPException(400, f"unknown shop; choose one of {SHOPS}")
+    if body.shop == CHAOS.fail_shop:
+        raise HTTPException(503, f"{body.shop} is closed")           # the second fault: a shop that is down
+    order = Order(order_id=uuid.uuid4().hex[:8], shop=body.shop, item=body.item, placed_at=time.time())
     ORDERS[order.order_id] = order
-    metrics.ORDERS_PLACED.labels(stall=order.stall).inc()      # Counter: 20 -> 21
-    metrics.ORDERS_WAITING.labels(stall=order.stall).inc()     # Gauge: one more in the queue
-    log.info("order_placed", msg=f"order placed at {order.stall}", order_id=order.order_id, stall=order.stall,
-             queue_length=stalls()[order.stall])
+    metrics.ORDERS_PLACED.labels(shop=order.shop).inc()      # Counter: 20 -> 21
+    metrics.ORDERS_WAITING.labels(shop=order.shop).inc()     # Gauge: one more in the queue
+    log.info("order_placed", msg=f"order placed at {order.shop}", order_id=order.order_id, shop=order.shop,
+             queue_length=shops()[order.shop])
     return asdict(order)
 
 
@@ -181,12 +183,12 @@ def show_order(order_id: str) -> dict:
 def mark_ready(order_id: str) -> dict:
     order = transition(get_order(order_id), ("waiting",), "ready")
     order.ready_at = time.time()
-    metrics.ORDERS_WAITING.labels(stall=order.stall).dec()     # Gauge: one fewer in the queue
+    metrics.ORDERS_WAITING.labels(shop=order.shop).dec()     # Gauge: one fewer in the queue
     prep = order.ready_at - order.placed_at
-    metrics.ORDER_PREP.labels(stall=order.stall).observe(prep)          # Histogram: which bucket
-    metrics.ORDER_PREP_SUMMARY.labels(stall=order.stall).observe(prep)  # Summary: sum and count
+    metrics.ORDER_PREP.labels(shop=order.shop).observe(prep)          # Histogram: which bucket
+    metrics.ORDER_PREP_SUMMARY.labels(shop=order.shop).observe(prep)  # Summary: sum and count
     log.log(logging.WARNING if prep > 300 else logging.INFO, "order_ready", msg=f"order ready after {prep:.1f} s",
-            order_id=order.order_id, stall=order.stall, prep_s=round(prep, 2))
+            order_id=order.order_id, shop=order.shop, prep_s=round(prep, 2))
     return asdict(order)
 
 
@@ -195,9 +197,9 @@ def pick_up(order_id: str) -> dict:
     order = transition(get_order(order_id), ("ready",), "picked_up")
     order.picked_up_at = time.time()
     delay = order.picked_up_at - order.ready_at
-    metrics.PICKUP_DELAY.labels(stall=order.stall).observe(delay)
+    metrics.PICKUP_DELAY.labels(shop=order.shop).observe(delay)
     log.info("order_picked_up", msg=f"order picked up after waiting {delay:.1f} s at the counter",
-             order_id=order.order_id, stall=order.stall, pickup_delay_s=round(delay, 2))
+             order_id=order.order_id, shop=order.shop, pickup_delay_s=round(delay, 2))
     return asdict(order)
 
 
@@ -207,9 +209,9 @@ def cancel(order_id: str) -> dict:
     order = transition(get_order(order_id), ("waiting", "ready"), "cancelled")
     order.cancelled_at = time.time()
     if was_waiting:
-        metrics.ORDERS_WAITING.labels(stall=order.stall).dec()
-    metrics.ORDERS_CANCELLED.labels(stall=order.stall).inc()
-    log.warning("order_cancelled", msg="order cancelled", order_id=order.order_id, stall=order.stall,
+        metrics.ORDERS_WAITING.labels(shop=order.shop).dec()
+    metrics.ORDERS_CANCELLED.labels(shop=order.shop).inc()
+    log.warning("order_cancelled", msg="order cancelled", order_id=order.order_id, shop=order.shop,
                 was_ready=not was_waiting)
     return asdict(order)
 
@@ -224,8 +226,8 @@ def chaos_status() -> dict:
 def chaos_set(body: Chaos) -> dict:
     """Replace the chaos settings. `{"slow_every_n": 5, "delay_ms": 500}` is the assignment's example fault."""
     global CHAOS
-    if body.fail_stall is not None and body.fail_stall not in STALLS:
-        raise HTTPException(400, f"unknown stall; choose one of {STALLS}")
+    if body.fail_shop is not None and body.fail_shop not in SHOPS:
+        raise HTTPException(400, f"unknown shop; choose one of {SHOPS}")
     CHAOS = body
     log.warning("chaos_changed", msg="chaos settings changed", **CHAOS.model_dump())
     return CHAOS.model_dump()

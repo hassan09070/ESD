@@ -9,7 +9,7 @@ sentence). Inside an HTTP request, `request_id` is bound as a context variable s
 line emitted while handling that request carries it without being passed around.
 
 What is never logged: anything a customer typed. `item` is free text and could hold a
-name or a phone number, so order events log order_id and stall only.
+name or a phone number, so order events log order_id and shop only.
 """
 from __future__ import annotations
 

@@ -25,6 +25,6 @@ if curl -sf "$KB/api/data_views" | grep -q '"title":"canteen-logs-\*"'; then
 else
   echo "POST kibana data view canteen-logs-*"
   curl -sf -X POST "$KB/api/data_views/data_view" -H 'kbn-xsrf: true' -H 'Content-Type: application/json' \
-    -d '{"data_view":{"title":"canteen-logs-*","name":"canteen logs","timeFieldName":"@timestamp"},"override":true}'; echo
+    -d '{"data_view":{"id":"canteen-logs","title":"canteen-logs-*","name":"canteen logs","timeFieldName":"@timestamp"},"override":true}'; echo
 fi
 echo "setup done"

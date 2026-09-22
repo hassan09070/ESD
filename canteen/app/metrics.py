@@ -2,7 +2,7 @@
 
 Naming follows the Prometheus conventions: a `canteen_` prefix, base units in the name
 (`_seconds`), `_total` on counters. The only label with more than a handful of values is
-`stall`, and it is bounded by STALLS (4 values): a label value that can grow without limit
+`shop`, and it is bounded by SHOPS (4 values): a label value that can grow without limit
 (order id, customer, request id) would create a new time series per value - that is the
 "cardinality explosion" of Part E.2, demonstrated on purpose by `canteen_demo_requests_total`.
 
@@ -22,18 +22,18 @@ os.environ.setdefault("PROMETHEUS_DISABLE_CREATED_SERIES", "True")
 
 from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, Counter, Gauge, Histogram, Summary, generate_latest  # noqa: E402
 
-STALLS = ("chai", "biryani", "shawarma", "juice")
+SHOPS = ("sky_dhaba", "tapal", "cafetogo", "grito")
 
 # ---------------------------------------------------------------- business metrics
-ORDERS_PLACED = Counter("canteen_orders_placed_total", "Orders placed, by stall", ["stall"])
-ORDERS_CANCELLED = Counter("canteen_orders_cancelled_total", "Orders cancelled before pickup, by stall", ["stall"])
-ORDERS_WAITING = Gauge("canteen_orders_waiting", "Orders placed but not yet ready (the queue at each stall)", ["stall"])
+ORDERS_PLACED = Counter("canteen_orders_placed_total", "Orders placed, by shop", ["shop"])
+ORDERS_CANCELLED = Counter("canteen_orders_cancelled_total", "Orders cancelled before pickup, by shop", ["shop"])
+ORDERS_WAITING = Gauge("canteen_orders_waiting", "Orders placed but not yet ready (the queue at each shop)", ["shop"])
 # prep time = placed -> ready. Load tests take seconds; a real canteen takes minutes; buckets cover both.
 PREP_BUCKETS = (0.5, 1, 2, 5, 10, 30, 60, 120, 300, 600)
-ORDER_PREP = Histogram("canteen_order_prep_seconds", "Time from order placed to order ready, by stall", ["stall"], buckets=PREP_BUCKETS)
-ORDER_PREP_SUMMARY = Summary("canteen_order_prep_summary_seconds", "Same quantity as canteen_order_prep_seconds as a Summary (sum/count only: Python summaries have no quantiles)", ["stall"])
+ORDER_PREP = Histogram("canteen_order_prep_seconds", "Time from order placed to order ready, by shop", ["shop"], buckets=PREP_BUCKETS)
+ORDER_PREP_SUMMARY = Summary("canteen_order_prep_summary_seconds", "Same quantity as canteen_order_prep_seconds as a Summary (sum/count only: Python summaries have no quantiles)", ["shop"])
 # self-explored: how long ready food waits at the counter before someone picks it up
-PICKUP_DELAY = Histogram("canteen_pickup_delay_seconds", "Time from order ready to picked up (food going cold), by stall", ["stall"], buckets=PREP_BUCKETS)
+PICKUP_DELAY = Histogram("canteen_pickup_delay_seconds", "Time from order ready to picked up (food going cold), by shop", ["shop"], buckets=PREP_BUCKETS)
 
 # ---------------------------------------------------------------- application metrics
 HTTP_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5)
@@ -56,12 +56,12 @@ def record_demo_request(request_id: str) -> None:
         DEMO_REQUESTS.inc()
 
 
-# Pre-create every stall series so that a stall with no orders yet shows 0 (and rate() = 0)
+# Pre-create every shop series so that a shop with no orders yet shows 0 (and rate() = 0)
 # instead of "no data" in Grafana.
-for _stall in STALLS:
-    ORDERS_PLACED.labels(stall=_stall)
-    ORDERS_CANCELLED.labels(stall=_stall)
-    ORDERS_WAITING.labels(stall=_stall)
+for _shop in SHOPS:
+    ORDERS_PLACED.labels(shop=_shop)
+    ORDERS_CANCELLED.labels(shop=_shop)
+    ORDERS_WAITING.labels(shop=_shop)
 
 
 def render() -> tuple[bytes, str]:

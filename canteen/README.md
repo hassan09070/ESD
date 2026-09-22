@@ -1,13 +1,13 @@
 # canteen
 
-A university canteen order queue, built small on purpose so that every part of its observability stack can be understood: Prometheus + Grafana + Node Exporter for metrics, Filebeat + Elasticsearch + Kibana for logs. Enterprise Software Development, Fall 2026, Assignment 1. `REPORT.md` is the report; `docs/architecture.md` has the diagram and failure analysis.
+A university canteen order queue, built small on purpose so that every part of its observability stack can be understood: Prometheus + Grafana + Node Exporter for metrics, Filebeat + Elasticsearch + Kibana for logs. Enterprise Software Development, Fall 2026, Assignment 1. `REPORT.md` is the report (sections A–E, diagram and failure analysis included).
 
 ## What it is
 
-Four stalls (`chai`, `biryani`, `shawarma`, `juice`). A customer places an order at a stall, the stall marks it ready, the customer picks it up; or the order is cancelled. That is the whole business:
+Four shops: `sky_dhaba` (chai, pharata), `tapal` (biryani, pulao), `cafetogo` (burger, roll) and `grito` (corn, ice cream). A customer places an order at a shop, the shop marks it ready, the customer picks it up; or the order is cancelled. That is the whole business:
 
 ```
-POST /orders {stall,item} -> waiting --POST /orders/{id}/ready--> ready --POST /orders/{id}/pickup--> picked_up
+POST /orders {shop,item} -> waiting --POST /orders/{id}/ready--> ready --POST /orders/{id}/pickup--> picked_up
                                 |                                   |
                                 +---------- POST /orders/{id}/cancel ----------> cancelled
 ```
@@ -26,35 +26,52 @@ docker compose up -d --build     # first run pulls ~3 GB of images
 docker compose ps                # wait until elasticsearch and kibana are "healthy" (~90 s); setup must be "Exited (0)"
 ```
 
-| Service | URL | Notes |
+| Service | Open | Notes |
 |---|---|---|
-| canteen | http://localhost:8000/docs | Swagger UI: every endpoint has "Try it out"; metrics at `/metrics` |
-| Prometheus | http://localhost:9090 | Status → Targets: `canteen`, `node`, `prometheus` must be UP |
-| Grafana | http://localhost:3000 | login `admin` / `admin`; folder **canteen**: Application, Business, Node Exporter |
-| Kibana | http://localhost:5601 | Discover → data view **canteen logs** |
-| Elasticsearch | http://localhost:9200 | `_cat/indices/canteen-logs-*?v` |
+| canteen | [Swagger UI](http://localhost:8000/docs) · [/health](http://localhost:8000/health) · [/metrics](http://localhost:8000/metrics) · [/shops](http://localhost:8000/shops) · [/chaos](http://localhost:8000/chaos) | every endpoint has "Try it out" |
+| load | `docker logs -f canteen-load` | continuous random traffic (6 customers, busy/quiet cycle, rushes, lulls); one status line a minute |
+| Prometheus | [Targets](http://localhost:9090/targets) · [Query](http://localhost:9090/query) | `canteen`, `node`, `prometheus` must be UP |
+| Grafana | [Application](http://localhost:3000/d/canteen-app) · [Business](http://localhost:3000/d/canteen-business) · [Node Exporter](http://localhost:3000/d/canteen-node) | login `admin` / `admin` |
+| Kibana | [Discover](<http://localhost:5601/app/discover#/?_g=(time:(from:now-1h,to:now))&_a=(index:'canteen-logs')>) | data view **canteen logs** |
+| Elasticsearch | [indices](http://localhost:9200/_cat/indices/canteen-logs-*?v) · [count](http://localhost:9200/canteen-logs-*/_count) | |
 
 Node Exporter runs on the host network and is not published on a Mac; see it at Prometheus → Targets, or `docker exec canteen-prometheus wget -qO- http://node-exporter:9100/metrics`.
+
+
+## Where to look
+
+Ready-made views for the report (Prometheus/Grafana open on the last hour; Kibana on the last hour, change the range as needed):
+
+- **Orders per minute by shop** — [Prometheus graph](<http://localhost:9090/query?g0.expr=sum%20by%20%28shop%29%20%28rate%28canteen_orders_placed_total%5B5m%5D%29%29%20%2A%2060&g0.tab=graph&g0.range_input=1h>) · [Grafana Business](http://localhost:3000/d/canteen-business?from=now-1h&to=now)
+- **HTTP p95 (1m window)** — [Prometheus graph](<http://localhost:9090/query?g0.expr=histogram_quantile%280.95%2C%20sum%20by%20%28le%29%20%28rate%28canteen_http_request_duration_seconds_bucket%5B1m%5D%29%29%29&g0.tab=graph&g0.range_input=1h>) · [Grafana Application](http://localhost:3000/d/canteen-app?from=now-1h&to=now)
+- **Machine (Node Exporter)** — [Grafana Node Exporter](http://localhost:3000/d/canteen-node?from=now-1h&to=now) · [node target](http://localhost:9090/targets?search=node)
+- **Cardinality experiment (E.2)** — [count(canteen_demo_requests_total)](<http://localhost:9090/query?g0.expr=count%28canteen_demo_requests_total%29&g0.tab=graph&g0.range_input=1h&g1.expr=count%28last_over_time%28canteen_demo_requests_total%5B15m%5D%29%29&g1.tab=graph&g1.range_input=1h>)
+- **All log lines** — [Kibana Discover](<http://localhost:5601/app/discover#/?_g=(time:(from:now-1h,to:now))&_a=(index:'canteen-logs',columns:!(event,shop,order_id,request_id,msg))>)
+- **Slow requests (E.1)** — [Kibana Discover](<http://localhost:5601/app/discover#/?_g=(time:(from:now-1h,to:now))&_a=(index:'canteen-logs',columns:!(event,route,status_code,duration_ms,request_id),query:(language:kuery,query:'event%20:%20%22http_request%22%20and%20duration_ms%20%3E%20400'))>)
+- **One order end to end** — [Kibana Discover](<http://localhost:5601/app/discover#/?_g=(time:(from:now-1h,to:now))&_a=(index:'canteen-logs',columns:!(event,shop,prep_s,pickup_delay_s,request_id),query:(language:kuery,query:'order_id%20:%20%22PASTE_ID%22'))>) (replace `PASTE_ID`)
+- **Raw metrics text** — [/metrics](http://localhost:8000/metrics) · **raw JSON logs** — `docker logs canteen-app | tail -5`
+
+The Kibana data view has the fixed id `canteen-logs` (set by `scripts/setup_elastic.sh`), so these links survive a rebuild.
 
 ## Use
 
 ```sh
-curl -s -X POST localhost:8000/orders -H 'Content-Type: application/json' -d '{"stall":"chai","item":"karak"}'
-#  {"order_id":"6942c973","stall":"chai","item":"karak","state":"waiting",...}
+curl -s -X POST localhost:8000/orders -H 'Content-Type: application/json' -d '{"shop":"sky_dhaba","item":"chai"}'
+#  {"order_id":"6942c973","shop":"sky_dhaba","item":"chai","state":"waiting",...}
 curl -s -X POST localhost:8000/orders/6942c973/ready
 curl -s -X POST localhost:8000/orders/6942c973/pickup
-curl -s localhost:8000/stalls              # orders waiting per stall
+curl -s localhost:8000/shops              # orders waiting per shop
 curl -s localhost:8000/metrics | grep canteen_orders
 docker logs canteen-app | tail -3          # the JSON lines behind Kibana
 ```
 
-Traffic for the dashboards: `python3 scripts/load.py --duration 60 --concurrency 4` runs 4 customers ordering at random stalls (10 % cancel) and prints client-side latency per route. Then open Grafana → canteen / Business.
+Traffic is generated all the time by the `load` service, so Grafana → canteen / Business fills on its own within a minute. `docker compose stop load` pauses it, `docker compose start load` resumes. For a fixed, reproducible burst run `python3 scripts/load.py --duration 60 --concurrency 4` (prints client-side latency per route).
 
 Faults (Part E), toggled over HTTP, no restart:
 
 ```sh
 curl -s -X POST localhost:8000/chaos -H 'Content-Type: application/json' -d '{"slow_every_n":5,"delay_ms":500}'   # every 5th /orders call sleeps 500 ms
-curl -s -X POST localhost:8000/chaos -H 'Content-Type: application/json' -d '{"fail_stall":"biryani"}'           # biryani answers 503
+curl -s -X POST localhost:8000/chaos -H 'Content-Type: application/json' -d '{"fail_shop":"tapal"}'           # tapal answers 503
 curl -s -X POST localhost:8000/chaos/reset
 ```
 
@@ -62,13 +79,13 @@ curl -s -X POST localhost:8000/chaos/reset
 
 ```sh
 uv sync
-uv run pytest        # 11 tests: lifecycle, metrics, logs, chaos; no Docker needed
+uv run pytest        # 12 tests: lifecycle, metrics, logs, chaos; no Docker needed
 ```
 
 ## Run the experiments
 
 ```sh
-caffeinate -i scripts/experiment_fault.sh slow        # E.1: baseline / slow-every-5th / recovery, >= 120 s each (Mac: caffeinate keeps the laptop awake; drop it on Linux)
+caffeinate -i scripts/experiment_fault.sh slow        # E.1: baseline / slow-every-5th / recovery, >= 120 s each; pauses the load service for the run (Mac: caffeinate keeps the laptop awake; drop it on Linux)
 python3 scripts/stage_counts.py <start> <end> fault   # per-stage numbers from Prometheus + Elasticsearch (windows are printed by the runner)
 python3 scripts/experiment_cardinality.py             # E.2: request_id label on a demo counter, capped at 100 series (~2 min, re-creates the app twice)
 ```
@@ -78,7 +95,7 @@ Both leave the app with chaos reset and `CANTEEN_DEMO_CARDINALITY=0`. Raw output
 ## Dashboards and Kibana
 
 - **canteen / Application** — requests/s by status and by route, HTTP p50/p95/p99 and p95 by route, error rate, mean latency.
-- **canteen / Business** — orders waiting, placed and cancelled, busiest stall, cancel rate, orders/min by stall, the waiting gauge by stall, prep-time p95 (histogram) next to prep-time mean (summary), pickup delay (the self-explored metric), cancellations/min.
+- **canteen / Business** — orders waiting, placed and cancelled, busiest shop, cancel rate, orders/min by shop, the waiting gauge by shop, prep-time p95 (histogram) next to prep-time mean (summary), pickup delay (the self-explored metric), cancellations/min.
 - **canteen / Node Exporter (machine)** — the machine name, CPU, memory, disk, network, load, disk I/O.
 
 Dashboards are JSON files in `monitoring/grafana/dashboards/`; Grafana re-reads them every 30 s. Kibana queries used in the report are in `scripts/kibana_queries.md`.
@@ -90,14 +107,5 @@ scripts/cleanup.sh            # docker compose down -v: containers + Prometheus/
 docker compose down           # containers only; metrics and logs are kept in named volumes for next time
 ```
 
-## Troubleshooting
 
-- **Kibana shows no data** — `docker compose ps -a | grep setup` must be `Exited (0)` and `filebeat` `Up`; generate a request first; `curl 'localhost:9200/_cat/indices/canteen-logs-*?v'`.
-- **Prometheus target `node` DOWN** — node-exporter is on the host network and Prometheus reaches it at the docker0 gateway `172.17.0.1` (`extra_hosts` in `docker-compose.yml`). If `docker network inspect bridge` shows another gateway, change it. On Linux a firewall may block bridge → host.
-- **Grafana panels empty** — no traffic yet (`scripts/load.py`), or the time picker is outside the run. "Data source not found": `docker compose up -d --force-recreate grafana`.
-- **Elasticsearch exits 137** — Docker's memory limit; give Docker more RAM or lower `ES_JAVA_OPTS` in `docker-compose.yml`.
-- **Port already in use** — another stack (e.g. `termlab`) owns 8000/3000/9090/9200/5601; `docker compose down` it first.
 
-## Credits
-
-See `REPORT.md` → Credits: Lab 1 (Midnight Launch) for the shape of the stack and the chaos-over-HTTP idea; my earlier `termlab` project for the Filebeat/Elasticsearch/Node Exporter configuration; Grafana community dashboard 1860 as the model for the Node dashboard; FastAPI, uvicorn, prometheus_client, structlog, pytest; Claude (Anthropic) as an AI pair programmer.

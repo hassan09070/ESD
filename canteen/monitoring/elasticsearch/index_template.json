@@ -21,7 +21,7 @@
         "message": {"type": "text"},
         "request_id": {"type": "keyword"},
         "order_id": {"type": "keyword"},
-        "stall": {"type": "keyword"},
+        "shop": {"type": "keyword"},
         "method": {"type": "keyword"},
         "path": {"type": "keyword"},
         "route": {"type": "keyword"},

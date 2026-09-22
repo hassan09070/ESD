@@ -4,7 +4,7 @@
     python3 scripts/experiment_cardinality.py
 
 1. Re-create the app with CANTEEN_DEMO_CARDINALITY=1 so canteen_demo_requests_total gets a
-   request_id label; send 100 x GET /stalls each with its own X-Request-ID; wait 2 scrapes;
+   request_id label; send 100 x GET /shops each with its own X-Request-ID; wait 2 scrapes;
    query count(canteen_demo_requests_total) (expect 100) and prometheus_tsdb_head_series.
 2. Re-create with the flag off (same counter, no label), send 20 more, wait, query again:
    count() -> 1 live series; count(last_over_time(...[15m])) -> still 101: history is kept.
@@ -59,7 +59,7 @@ def restart_app(flag: str) -> None:
 
 def send(n: int, prefix: str) -> None:
     for i in range(n):
-        req = urllib.request.Request(f"{API}/stalls", headers={"X-Request-ID": f"{prefix}-{i:03d}"})
+        req = urllib.request.Request(f"{API}/shops", headers={"X-Request-ID": f"{prefix}-{i:03d}"})
         with urllib.request.urlopen(req, timeout=10) as r:
             assert r.status == 200
 

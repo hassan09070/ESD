@@ -1,19 +1,19 @@
 # Kibana queries (KQL) used in the report
 
 Data view: **canteen logs** (`canteen-logs-*`, time field `@timestamp`), created by `scripts/setup_elastic.sh`.
-Kibana → Discover → pick the data view → paste a query. Useful columns: `event`, `stall`, `order_id`, `request_id`, `status_code`, `duration_ms`, `msg`.
+Kibana → Discover → pick the data view → paste a query. Useful columns: `event`, `shop`, `order_id`, `request_id`, `status_code`, `duration_ms`, `msg`.
 
 | # | Purpose | KQL |
 |---|---------|-----|
-| 1 | Follow one order end to end (placed → ready → picked up) | `order_id : "2bdcba54"` |
-| 2 | Follow one HTTP request (the `X-Request-ID` the client sent, or the one the app generated and returned) | `request_id : "load-7-42"` |
+| 1 | Follow one order end to end (placed → ready → picked up) | `order_id : "134cdd02"` |
+| 2 | Follow one HTTP request (the `X-Request-ID` the client sent, or the one the app generated and returned) | `request_id : "4574638028a0"` |
 | 3 | All errors | `level : "error"` |
 | 4 | Slow requests (the every-5th-request fault shows here) | `event : "http_request" and duration_ms > 400` |
-| 5 | Failed requests (a closed stall answers 503) | `event : "http_request" and status_code >= 500` |
+| 5 | Failed requests (a closed shop answers 503) | `event : "http_request" and status_code >= 500` |
 | 6 | Orders that took long to prepare | `event : "order_ready" and prep_s > 2` |
 | 7 | Food that sat at the counter | `event : "order_picked_up" and pickup_delay_s > 1` |
-| 8 | Cancellations, and whether the food was already cooked | `event : "order_cancelled" and was_ready : true` |
-| 9 | One stall's whole day | `stall : "biryani"` |
+| 8 | Cancellations, with `was_ready` showing whether the food was already cooked | `event : "order_cancelled"` |
+| 9 | One shop's whole day | `shop : "tapal"` |
 | 10 | Chaos changes (what fault was active when) | `event : "chaos_changed"` |
 | 11 | App restarts | `event : "startup"` |
 
@@ -22,7 +22,7 @@ Kibana → Discover → pick the data view → paste a query. Useful columns: `e
 ```sh
 ES=http://localhost:9200
 count() { curl -s --get "$ES/canteen-logs-*/_count" --data-urlencode "q=$1" | python3 -c 'import sys,json;print(json.load(sys.stdin)["count"])'; }
-count 'order_id:"2bdcba54"'
+count 'order_id:"134cdd02"'
 count 'level:"error"'
 count 'event:"http_request" AND duration_ms:>400'
 count 'event:"http_request" AND status_code:>=500'

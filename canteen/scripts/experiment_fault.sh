@@ -6,7 +6,7 @@
 #
 #   baseline : POST /chaos/reset                                   -> load.py
 #   fault    : slow   -> POST /chaos {"slow_every_n":5,"delay_ms":500}  (the brief's example)
-#              closed -> POST /chaos {"fail_stall":"biryani"}
+#              closed -> POST /chaos {"fail_shop": "tapal"}
 #   recovery : POST /chaos/reset                                   -> load.py
 #
 # Prints each stage's UTC window (paste into Grafana/Kibana time pickers) and appends it to
@@ -19,11 +19,16 @@ MIN_STAGE_S="${MIN_STAGE_S:-120}"
 CONCURRENCY="${CONCURRENCY:-4}"
 URL="${CANTEEN_URL:-http://localhost:8000}"
 RESULTS=scripts/results; mkdir -p "$RESULTS"
+# The `load` service must not add traffic during the stages: pause it, resume on exit.
+if docker compose ps --status running --services 2>/dev/null | grep -qx load; then
+  echo "==> pausing the load service for the run"; docker compose stop load >/dev/null
+  trap 'echo "==> resuming the load service"; docker compose start load >/dev/null' EXIT
+fi
 SUMMARY="$RESULTS/fault_${MODE}_$(date -u +%Y%m%dT%H%M%SZ).txt"
 
 case "$MODE" in
   slow)   FAULT_BODY='{"slow_every_n": 5, "delay_ms": 500}' ;;
-  closed) FAULT_BODY='{"fail_stall": "biryani"}' ;;
+  closed) FAULT_BODY='{"fail_shop": "tapal"}' ;;
   *) echo "mode must be slow or closed" >&2; exit 1 ;;
 esac
 

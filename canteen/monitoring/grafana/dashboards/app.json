@@ -24,7 +24,7 @@
       "id": 1,
       "type": "timeseries",
       "title": "Requests/s by status",
-      "description": "rate() of the HTTP counter over 1 minute (12 scrapes), split by status code. 2xx = served, 409 = illegal transition, 503 = stall closed (chaos), 5xx = bugs.",
+      "description": "rate() of the HTTP counter over 1 minute (12 scrapes), split by status code. 2xx = served, 409 = illegal transition, 503 = shop closed (chaos), 5xx = bugs.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -234,7 +234,7 @@
       "id": 5,
       "type": "timeseries",
       "title": "Error rate (%)",
-      "description": "Share of responses with status >= 500 over 5 minutes. 503 from a closed stall shows here; slow requests do not.",
+      "description": "Share of responses with status >= 500 over 5 minutes. 503 from a closed shop shows here; slow requests do not.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"

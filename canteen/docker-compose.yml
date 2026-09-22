@@ -23,6 +23,23 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Continuous, realistic random traffic so the dashboards and Kibana are never empty.
+  # `docker compose stop load` pauses it (the experiment runner does this itself).
+  load:
+    image: python:3.12-slim
+    container_name: canteen-load
+    command: ["python3", "/scripts/load.py", "--forever"]
+    volumes:
+      - ./scripts/load.py:/scripts/load.py:ro
+    environment:
+      CANTEEN_URL: http://app:8000
+      LOAD_CUSTOMERS: "6"          # customers in flight; think time between orders follows the busy/quiet cycle
+      LOAD_PERIOD_MIN: "20"        # minutes per busy/quiet cycle, plus random rushes and lulls
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:v3.5.0
     container_name: canteen-prometheus

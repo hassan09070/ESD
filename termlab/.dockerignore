@@ -1,9 +1,0 @@
-.venv
-.git
-.env
-tests
-monitoring
-docs
-scripts
-sandbox
-**/__pycache__
