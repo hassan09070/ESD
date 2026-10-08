@@ -1,0 +1,31 @@
+caller -> http://localhost:8000/orders | timeout 2.0 s | retries 3 (backoff 0.25 s x2) | breaker opens after 3 failures for 5 s
+
+--- 1. normal: three orders at sky_dhaba
+[12:19:47.337] sky_dhaba  OK       order 77f5e56f (waiting) on attempt 1
+[12:19:47.345] sky_dhaba  OK       order bb917287 (waiting) on attempt 1
+[12:19:47.348] sky_dhaba  OK       order a90a6ada (waiting) on attempt 1
+
+--- 2. server failure: PUT /chaos closes tapal (every new tapal order -> 503); the caller retries, then the breaker opens
+[12:19:47.354] tapal      attempt 1/4 failed: HTTP 503 tapal is closed; retrying in 0.25 s
+[12:19:47.616] tapal      attempt 2/4 failed: HTTP 503 tapal is closed; retrying in 0.50 s
+[12:19:48.133] tapal      attempt 3/4 failed: HTTP 503 tapal is closed; retrying in 1.00 s
+[12:19:49.152] tapal      FAILED   after 4 attempts: HTTP 503 tapal is closed
+[12:19:49.157] tapal      attempt 1/4 failed: HTTP 503 tapal is closed; retrying in 0.25 s
+[12:19:49.424] tapal      attempt 2/4 failed: HTTP 503 tapal is closed; retrying in 0.50 s
+[12:19:49.940] tapal      attempt 3/4 failed: HTTP 503 tapal is closed; retrying in 1.00 s
+[12:19:50.960] tapal      FAILED   after 4 attempts: HTTP 503 tapal is closed
+[12:19:50.964] tapal      attempt 1/4 failed: HTTP 503 tapal is closed; retrying in 0.25 s
+[12:19:51.229] tapal      attempt 2/4 failed: HTTP 503 tapal is closed; retrying in 0.50 s
+[12:19:51.746] tapal      attempt 3/4 failed: HTTP 503 tapal is closed; retrying in 1.00 s
+[12:19:52.763] tapal      FAILED   after 4 attempts: HTTP 503 tapal is closed
+[12:19:52.763] breaker: 3 consecutive failures -> OPEN for 5 s
+
+--- 3. breaker OPEN: calls are blocked without touching the server (sky_dhaba is healthy but still blocked)
+[12:19:52.763] sky_dhaba  BLOCKED  breaker is OPEN, not calling
+[12:19:53.273] sky_dhaba  BLOCKED  breaker is OPEN, not calling
+
+--- 4. recovery: DELETE /chaos re-opens tapal; wait for the 5 s open period, then one trial call
+[12:19:58.806] tapal      OK       order 83bf4780 (waiting) on attempt 1
+[12:19:58.806] breaker: trial call succeeded -> CLOSED
+[12:19:58.812] tapal      OK       order 26ca95c5 (waiting) on attempt 1
+[12:19:58.817] tapal      OK       order 3ae8200b (waiting) on attempt 1

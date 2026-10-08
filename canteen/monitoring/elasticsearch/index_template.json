@@ -31,6 +31,8 @@
         "pickup_delay_s": {"type": "float"},
         "queue_length": {"type": "integer"},
         "was_ready": {"type": "boolean"},
+        "grpc_method": {"type": "keyword"},
+        "grpc_code": {"type": "keyword"},
         "exc_type": {"type": "keyword"},
         "container": {"properties": {"id": {"type": "keyword"}, "name": {"type": "keyword"}}}
       }

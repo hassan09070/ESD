@@ -7,8 +7,8 @@
 #         -> drop_fields                   : remove Beat/Docker noise we never search
 #         -> index canteen-logs-YYYY.MM.DD  (mapping + ILM installed by scripts/setup_elastic.sh)
 #
-# Autodiscover (docker provider) watches the Docker API and tails only the container named
-# canteen-app: Prometheus/Grafana/ES/Kibana output never enters the index, and a re-created
+# Autodiscover (docker provider) watches the Docker API and tails only the containers named
+# canteen-app and canteen-grpc: Prometheus/Grafana/ES/Kibana output never enters the index, and a re-created
 # app container (new id) is picked up automatically.
 filebeat.autodiscover:
   providers:
@@ -16,11 +16,14 @@ filebeat.autodiscover:
       hints.enabled: false
       templates:
         - condition:
-            equals:
-              docker.container.name: canteen-app
+            or:
+              - equals:
+                  docker.container.name: canteen-app
+              - equals:
+                  docker.container.name: canteen-grpc      # A2: the gRPC service logs the same JSON shape
           config:
             - type: filestream
-              id: canteen-app-${data.docker.container.id}
+              id: canteen-${data.docker.container.name}-${data.docker.container.id}
               paths:
                 - /var/lib/docker/containers/${data.docker.container.id}/*.log
               parsers:

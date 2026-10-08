@@ -1,0 +1,31 @@
+// canteen gRPC API (Assignment 2 Part B): the "place an order" operation of the user task,
+// served by grpc_service/server.py as a separate process next to the HTTP API. Both apply the
+// rules in app/store.py to the same SQLite database.
+//
+// Generate the Python code from the project root:
+//   uv run python -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. --pyi_out=. grpc_service/canteen.proto
+syntax = "proto3";
+
+package canteen.v1;
+
+service OrderService {
+  // Create an order at a shop. Errors: INVALID_ARGUMENT (unknown shop, item not 1-40 chars),
+  // INTERNAL (unexpected failure). A repeat with the same idempotency_key returns the first
+  // order with replayed = true instead of creating a second one.
+  rpc PlaceOrder (PlaceOrderRequest) returns (Order);
+}
+
+message PlaceOrderRequest {
+  string shop = 1;             // one of sky_dhaba, tapal, cafetogo, grito
+  string item = 2;             // free text, 1-40 characters
+  string idempotency_key = 3;  // optional; same key -> same order
+}
+
+message Order {
+  string order_id = 1;
+  string shop = 2;
+  string item = 3;
+  string state = 4;            // waiting | ready | picked_up | cancelled
+  double placed_at = 5;        // Unix seconds
+  bool replayed = 6;           // true if this is the stored result for a repeated idempotency_key
+}

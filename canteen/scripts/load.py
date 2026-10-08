@@ -38,12 +38,14 @@ ITEMS = {"sky_dhaba": ["chai", "pharata"], "tapal": ["biryani", "pulao"], "cafet
 RESULTS = Path(__file__).resolve().parent / "results"
 
 
-def http(method: str, url: str, body: dict | None = None, rid: str | None = None) -> tuple[int, dict, float]:
+def http(method: str, url: str, body: dict | None = None, rid: str | None = None, client_id: str | None = None) -> tuple[int, dict, float]:
     """Returns (status, json, seconds). status 0 = could not connect (app down / restarting)."""
     data = json.dumps(body).encode() if body is not None else None
     headers = {"Content-Type": "application/json"}
     if rid:
         headers["X-Request-ID"] = rid
+    if client_id:
+        headers["X-Client-ID"] = client_id          # A2: POST /orders is rate limited per client
     req = request.Request(url, method=method, data=data, headers=headers)
     t0 = time.perf_counter()
     try:
@@ -55,11 +57,11 @@ def http(method: str, url: str, body: dict | None = None, rid: str | None = None
         return 0, {}, time.perf_counter() - t0
 
 
-def one_order(base: str, rng: random.Random, prep: float, cancel_p: float, mistake_p: float) -> dict:
+def one_order(base: str, rng: random.Random, prep: float, cancel_p: float, mistake_p: float, client_id: str = "load") -> dict:
     """Place one order and take it through its life. Returns a row with every call's latency."""
     shop = rng.choice(SHOPS)
     row = {"shop": shop, "calls": [], "outcome": "ok"}
-    status, order, dt = http("POST", f"{base}/orders", {"shop": shop, "item": rng.choice(ITEMS[shop])})
+    status, order, dt = http("POST", f"{base}/orders", {"shop": shop, "item": rng.choice(ITEMS[shop])}, client_id=client_id)
     row["calls"].append(("POST /orders", status, dt))
     if status != 201:
         row["outcome"] = f"place_{status}"
@@ -89,7 +91,7 @@ def one_order(base: str, rng: random.Random, prep: float, cancel_p: float, mista
 def customer(base: str, deadline: float, rows: list, lock: threading.Lock, prep: float, seed: int) -> None:
     rng = random.Random(seed)
     while time.perf_counter() < deadline:
-        row = one_order(base, rng, prep, cancel_p=0.1, mistake_p=0.0)
+        row = one_order(base, rng, prep, cancel_p=0.1, mistake_p=0.0, client_id=f"load-{seed}")
         with lock:
             rows.append(row)
 
@@ -192,13 +194,13 @@ class Traffic:
             print(f"[{datetime.now(timezone.utc):%H:%M:%S}Z] load: level={lvl:.2f} ({note}) orders/min={o} cancelled={c} failed={e}", flush=True)
 
 
-def real_customer(base: str, traffic: Traffic, prep: float, max_think: float, mistake_p: float) -> None:
+def real_customer(base: str, traffic: Traffic, prep: float, max_think: float, mistake_p: float, n: int = 0) -> None:
     rng = random.Random()                                            # unseeded: real customers are not reproducible
     time.sleep(rng.uniform(0, 10))                                   # do not all arrive at once
     while True:
         with traffic.lock:
             cancel_p = traffic.cancel_p
-        row = one_order(base, rng, rng.uniform(1.5, prep), cancel_p, mistake_p)
+        row = one_order(base, rng, rng.uniform(1.5, prep), cancel_p, mistake_p, client_id=f"customer-{n}")
         with traffic.lock:
             traffic.orders += 1
             if row["outcome"] == "cancelled":
@@ -216,7 +218,7 @@ def forever_run(args: argparse.Namespace) -> int:
     print(f"[{datetime.now(timezone.utc):%H:%M:%S}Z] load: continuous, customers={args.concurrency} period={args.period}min -> {args.url}", flush=True)
     threading.Thread(target=traffic.controller, daemon=True).start()
     threading.Thread(target=traffic.reporter, daemon=True).start()
-    threads = [threading.Thread(target=real_customer, args=(args.url, traffic, args.prep, args.think, args.mistakes), daemon=True) for _ in range(args.concurrency)]
+    threads = [threading.Thread(target=real_customer, args=(args.url, traffic, args.prep, args.think, args.mistakes, n), daemon=True) for n in range(args.concurrency)]
     for t in threads:
         t.start()
     try:

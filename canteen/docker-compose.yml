@@ -15,6 +15,9 @@ services:
     container_name: canteen-app
     environment:
       CANTEEN_DEMO_CARDINALITY: ${CANTEEN_DEMO_CARDINALITY:-0}   # Part E.2 toggle; re-create the app to apply
+      CANTEEN_DB: /data/canteen.db                                 # A2: the store shared with the grpc service
+    volumes:
+      - app_data:/data
     ports:
       - "8000:8000"
     logging:
@@ -22,6 +25,39 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # A2 Part B: PlaceOrder as a gRPC service in its own process, same image, same rules
+  # (app/store.py), same SQLite file (app_data volume) as the HTTP API. Port 50051 = gRPC,
+  # 9095 = its own /metrics for Prometheus. Filebeat tails this container too.
+  grpc:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: canteen-grpc
+    command: ["python", "-m", "grpc_service.server"]
+    environment:
+      CANTEEN_DB: /data/canteen.db
+      GRPC_PORT: "50051"
+      GRPC_METRICS_PORT: "9095"
+    volumes:
+      - app_data:/data
+    ports:
+      - "50051:50051"
+      - "9095:9095"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 50051), 2).close()"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      app:
+        condition: service_healthy
 
   # Continuous, realistic random traffic so the dashboards and Kibana are never empty.
   # `docker compose stop load` pauses it (the experiment runner does this itself).
@@ -56,6 +92,7 @@ services:
       - "node-exporter:172.17.0.1"      # docker0 gateway = the host/VM as seen from a bridge network
     depends_on:
       - app
+      - grpc
       - node-exporter
 
   # Node Exporter reports the kernel it runs on. pid/uts/network namespaces are the host's
@@ -177,6 +214,7 @@ services:
         condition: service_completed_successfully
 
 volumes:
+  app_data:                            # the SQLite store (orders), shared by app and grpc
   prom_data:
   grafana_data:
   es_data:

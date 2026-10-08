@@ -1,0 +1,15 @@
+client X-Client-ID: demo-1791461980 -> 65 x POST /orders
+  1  201  remaining=59  retry-after=
+  2  201  remaining=58  retry-after=
+  3  201  remaining=57  retry-after=
+  …
+ 58  201  remaining=2  retry-after=
+ 59  201  remaining=1  retry-after=
+ 60  201  remaining=0  retry-after=
+ 61  429  remaining=0  retry-after=19
+ 62  429  remaining=0  retry-after=19
+ 63  429  remaining=0  retry-after=19
+ 64  429  remaining=0  retry-after=19
+ 65  429  remaining=0  retry-after=19
+last response body:
+{"error":{"code":"rate_limited","message":"rate limit of 60 orders per 60 s exceeded for client 'demo-1791461980'","details":[]}}

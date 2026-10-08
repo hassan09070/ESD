@@ -1,0 +1,39 @@
+$ # valid request
+$ curl -si -X POST localhost:8000/orders -H "Content-Type: application/json" -H "Idempotency-Key: demo-key-1" -H "X-Client-ID: readme" -d '{"shop":"tapal","item":"biryani"}'
+HTTP/1.1 201 Created
+content-type: application/json
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 59
+x-request-id: 600808835088
+
+{"order_id":"77776d30","shop":"tapal","item":"biryani","state":"waiting","placed_at":1791461971.4476902,"ready_at":null,"picked_up_at":null,"cancelled_at":null}
+
+$ # repeated request, same Idempotency-Key -> the same order, no second row
+HTTP/1.1 201 Created
+content-type: application/json
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 58
+idempotent-replayed: true
+x-request-id: 40a9a43772ad
+
+{"order_id":"77776d30","shop":"tapal","item":"biryani","state":"waiting","placed_at":1791461971.4476902,"ready_at":null,"picked_up_at":null,"cancelled_at":null}
+
+$ # invalid input: unknown shop
+HTTP/1.1 422 Unprocessable Entity
+content-type: application/json
+x-request-id: 392b8e90bb20
+
+{"error":{"code":"validation_error","message":"invalid input","details":[{"field":"shop","problem":"Input should be 'sky_dhaba', 'tapal', 'cafetogo' or 'grito'"}]}}
+
+$ # invalid input: missing item
+{"error":{"code":"validation_error","message":"invalid input","details":[{"field":"item","problem":"Field required"}]}}
+
+$ # wrong state: pickup before ready -> 409
+HTTP/1.1 409 Conflict
+content-type: application/json
+x-request-id: 0425ebfea02a
+
+{"error":{"code":"conflict","message":"order is waiting, cannot become picked_up","details":[]}}
+
+$ # unknown order -> 404
+{"error":{"code":"not_found","message":"unknown order","details":[]}}

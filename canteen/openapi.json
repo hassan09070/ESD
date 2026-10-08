@@ -1,0 +1,725 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "canteen",
+    "description": "Order queue for four university food shops. Every error has the shape `{\"error\": {\"code\", \"message\", \"details\"}}`.",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shops": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Queue length per shop",
+        "description": "How many orders are waiting to be prepared at each shop right now.",
+        "operationId": "shops_shops_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Shops Shops Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Place an order",
+        "description": "Create an order in state `waiting`. Rate limited per client; idempotent with `Idempotency-Key`.",
+        "operationId": "place_order_orders_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional. Repeating a request with the same key returns the first order instead of creating another (safe retries).",
+              "title": "Idempotency-Key"
+            },
+            "description": "Optional. Repeating a request with the same key returns the first order instead of creating another (safe retries)."
+          },
+          {
+            "name": "X-Client-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional. Rate-limit key (60 orders per 60 s per client); the client IP is used if absent.",
+              "title": "X-Client-Id"
+            },
+            "description": "Optional. Rate-limit key (60 orders per 60 s per client); the client IP is used if absent."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input (unknown shop, item not 1-40 chars, malformed body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for this client; wait Retry-After seconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The shop is closed (chaos fault)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{order_id}": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Show an order",
+        "operationId": "show_order_orders__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{order_id}/ready": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "The shop marks the order ready (waiting -> ready)",
+        "operationId": "mark_ready_orders__order_id__ready_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The order's current state does not allow this transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{order_id}/pickup": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "The customer picks the order up (ready -> picked_up)",
+        "operationId": "pick_up_orders__order_id__pickup_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The order's current state does not allow this transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{order_id}/cancel": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Cancel the order (waiting or ready -> cancelled)",
+        "operationId": "cancel_orders__order_id__cancel_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The order's current state does not allow this transition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chaos": {
+      "get": {
+        "tags": [
+          "chaos"
+        ],
+        "summary": "Current fault settings",
+        "operationId": "chaos_status_chaos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chaos"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "chaos"
+        ],
+        "summary": "Replace the fault settings",
+        "description": "Replace the whole settings object. `{\"slow_every_n\": 5, \"delay_ms\": 500}` is the A1 brief's example fault.",
+        "operationId": "chaos_set_chaos_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Chaos"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chaos"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input (unknown shop, item not 1-40 chars, malformed body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "chaos"
+        ],
+        "summary": "Reset the fault settings to defaults",
+        "operationId": "chaos_reset_chaos_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Chaos": {
+        "properties": {
+          "slow_every_n": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Slow Every N",
+            "description": "delay every n-th /orders request (0 = off); the A1 brief's example is 5",
+            "default": 0
+          },
+          "delay_ms": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "minimum": 0.0,
+            "title": "Delay Ms",
+            "description": "how long the delayed requests sleep",
+            "default": 500
+          },
+          "fail_shop": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sky_dhaba",
+                  "tapal",
+                  "cafetogo",
+                  "grito"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fail Shop",
+            "description": "this shop answers 503 'closed' to every new order"
+          }
+        },
+        "type": "object",
+        "title": "Chaos",
+        "description": "Faults for A1 Part E, toggled over HTTP so an experiment needs no restart."
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "machine-readable: validation_error | not_found | conflict | rate_limited | shop_closed | internal",
+            "examples": [
+              "conflict"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "examples": [
+              "order is ready, cannot become ready"
+            ]
+          },
+          "details": {
+            "items": {},
+            "type": "array",
+            "title": "Details",
+            "description": "validation errors: one entry per bad field"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "NewOrder": {
+        "properties": {
+          "shop": {
+            "type": "string",
+            "enum": [
+              "sky_dhaba",
+              "tapal",
+              "cafetogo",
+              "grito"
+            ],
+            "title": "Shop"
+          },
+          "item": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Item",
+            "examples": [
+              "chai"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop",
+          "item"
+        ],
+        "title": "NewOrder"
+      },
+      "OrderOut": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "title": "Order Id",
+            "examples": [
+              "5ae388f2"
+            ]
+          },
+          "shop": {
+            "type": "string",
+            "enum": [
+              "sky_dhaba",
+              "tapal",
+              "cafetogo",
+              "grito"
+            ],
+            "title": "Shop"
+          },
+          "item": {
+            "type": "string",
+            "title": "Item"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "waiting",
+              "ready",
+              "picked_up",
+              "cancelled"
+            ],
+            "title": "State"
+          },
+          "placed_at": {
+            "type": "number",
+            "title": "Placed At"
+          },
+          "ready_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ready At"
+          },
+          "picked_up_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Picked Up At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "shop",
+          "item",
+          "state",
+          "placed_at",
+          "ready_at",
+          "picked_up_at",
+          "cancelled_at"
+        ],
+        "title": "OrderOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

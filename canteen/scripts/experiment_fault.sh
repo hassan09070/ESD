@@ -4,10 +4,10 @@
 #
 #   scripts/experiment_fault.sh [slow|closed]
 #
-#   baseline : POST /chaos/reset                                   -> load.py
-#   fault    : slow   -> POST /chaos {"slow_every_n":5,"delay_ms":500}  (the brief's example)
-#              closed -> POST /chaos {"fail_shop": "tapal"}
-#   recovery : POST /chaos/reset                                   -> load.py
+#   baseline : DELETE /chaos                                        -> load.py
+#   fault    : slow   -> PUT /chaos {"slow_every_n":5,"delay_ms":500}   (the brief's example)
+#              closed -> PUT /chaos {"fail_shop": "tapal"} 
+#   recovery : DELETE /chaos                                        -> load.py
 #
 # Prints each stage's UTC window (paste into Grafana/Kibana time pickers) and appends it to
 # scripts/results/fault_<mode>_<ts>.txt.stages; load.py writes its raw rows next to it.
@@ -33,8 +33,8 @@ case "$MODE" in
 esac
 
 set_chaos() {   # $1 = json body, or "reset"
-  if [ "$1" = reset ]; then curl -sf -X POST "$URL/chaos/reset" >/dev/null
-  else curl -sf -X POST "$URL/chaos" -H 'Content-Type: application/json' -d "$1" >/dev/null; fi
+  if [ "$1" = reset ]; then curl -sf -X DELETE "$URL/chaos" >/dev/null
+  else curl -sf -X PUT "$URL/chaos" -H 'Content-Type: application/json' -d "$1" >/dev/null; fi
   echo "==> chaos now: $(curl -s "$URL/chaos")"
 }
 

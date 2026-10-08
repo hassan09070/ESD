@@ -9,6 +9,10 @@ scrape_configs:
     static_configs:
       - targets: ["app:8000"]    # compose DNS name of the app container
 
+  - job_name: grpc               # A2: the gRPC service's own /metrics (canteen_grpc_server_*)
+    static_configs:
+      - targets: ["grpc:9095"]
+
   - job_name: node               # Node Exporter: CPU, memory, disk, network of the machine
     static_configs:
       - targets: ["node-exporter:9100"]   # resolved by extra_hosts in docker-compose.yml

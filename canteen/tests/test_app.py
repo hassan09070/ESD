@@ -1,10 +1,12 @@
-"""The order lifecycle and its metrics, no Docker needed (TestClient runs the app in-process)."""
+"""The order lifecycle and its metrics, no Docker needed (TestClient runs the app in-process
+against a throw-away SQLite file, see conftest.py)."""
 import re
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import ORDERS, app          # must come before prometheus_client: metrics.py sets an env var it reads at import
+from app import store
+from app.main import app, limiter      # must come before prometheus_client: metrics.py sets an env var it reads at import
 from prometheus_client import REGISTRY   # noqa: E402
 
 
@@ -14,8 +16,11 @@ def sample(name, **labels):
 
 @pytest.fixture
 def client():
-    ORDERS.clear()                      # every test starts with an empty canteen
-    return TestClient(app)
+    store.init()
+    store.reset()                       # every test starts with an empty canteen
+    limiter.reset()
+    with TestClient(app) as c:          # `with` runs the lifespan (store init, waiting gauge binding)
+        yield c
 
 
 def test_full_lifecycle(client):
@@ -39,28 +44,30 @@ def test_illegal_transitions_are_409(client):
 
 
 def test_bad_input(client):
-    assert client.post("/orders", json={"shop": "pizza", "item": "x"}).status_code == 400
-    assert client.post("/orders", json={"shop": "sky_dhaba"}).status_code == 422             # missing item
+    assert client.post("/orders", json={"shop": "pizza", "item": "x"}).status_code == 422       # unknown shop: invalid input
+    assert client.post("/orders", json={"shop": "sky_dhaba"}).status_code == 422                # missing item
+    assert client.post("/orders", json={"shop": "sky_dhaba", "item": "x" * 41}).status_code == 422
     assert client.get("/orders/nope").status_code == 404
 
 
-# ----------------------------------------------------------------------------- stage 1: metrics
+# ----------------------------------------------------------------------------- metrics
 def test_metrics_endpoint_has_all_four_types(client):
     text = client.get("/metrics").text
     types = {m.group(2) for m in re.finditer(r"^# TYPE (canteen_\w+) (\w+)$", text, re.M)}
     assert types == {"counter", "gauge", "histogram", "summary"}
-    assert 'canteen_orders_waiting{shop="sky_dhaba"} 0.0' in text            # pre-initialised
+    assert 'canteen_orders_waiting{shop="sky_dhaba"} 0.0' in text            # read from the (empty) store
     assert "_created" not in text
 
 
 def test_business_metrics_follow_the_lifecycle(client):
-    placed, waiting = sample("canteen_orders_placed_total", shop="grito"), sample("canteen_orders_waiting", shop="grito")
+    placed = sample("canteen_orders_placed_total", shop="grito")
     prep_count = sample("canteen_order_prep_seconds_count", shop="grito")
+    assert sample("canteen_orders_waiting", shop="grito") == 0
     oid = client.post("/orders", json={"shop": "grito", "item": "corn"}).json()["order_id"]
     assert sample("canteen_orders_placed_total", shop="grito") == placed + 1
-    assert sample("canteen_orders_waiting", shop="grito") == waiting + 1
+    assert sample("canteen_orders_waiting", shop="grito") == 1
     client.post(f"/orders/{oid}/ready")
-    assert sample("canteen_orders_waiting", shop="grito") == waiting              # back down
+    assert sample("canteen_orders_waiting", shop="grito") == 0              # back down
     assert sample("canteen_order_prep_seconds_count", shop="grito") == prep_count + 1
     assert sample("canteen_order_prep_summary_seconds_count", shop="grito") >= 1
     client.post(f"/orders/{oid}/pickup")
@@ -71,10 +78,10 @@ def test_cancel_adjusts_gauge_only_if_it_was_waiting(client):
     a = client.post("/orders", json={"shop": "sky_dhaba", "item": "x"}).json()["order_id"]
     b = client.post("/orders", json={"shop": "sky_dhaba", "item": "y"}).json()["order_id"]
     client.post(f"/orders/{b}/ready")
-    waiting = sample("canteen_orders_waiting", shop="sky_dhaba")
+    assert sample("canteen_orders_waiting", shop="sky_dhaba") == 1
     client.post(f"/orders/{a}/cancel")                                            # was waiting -> gauge -1
     client.post(f"/orders/{b}/cancel")                                            # was ready   -> gauge unchanged
-    assert sample("canteen_orders_waiting", shop="sky_dhaba") == waiting - 1
+    assert sample("canteen_orders_waiting", shop="sky_dhaba") == 0
     assert sample("canteen_orders_cancelled_total", shop="sky_dhaba") >= 2
 
 
@@ -89,7 +96,7 @@ def test_http_metrics_use_route_templates(client):
     assert 'route="/metrics"' not in text                                         # scrapes are not counted
 
 
-# ----------------------------------------------------------------------------- stage 5: logs
+# ----------------------------------------------------------------------------- logs
 def captured_lines(client, do):
     """Run `do(client)` with a tap on the root logger; return the JSON lines it produced."""
     import io
@@ -108,7 +115,8 @@ def captured_lines(client, do):
     return [l for l in lines if l["event"] in APP_EVENTS]        # httpx (the test client) logs at INFO too
 
 
-APP_EVENTS = {"startup", "http_request", "order_placed", "order_ready", "order_picked_up", "order_cancelled", "chaos_changed", "error"}
+APP_EVENTS = {"startup", "http_request", "order_placed", "order_replayed", "order_ready", "order_picked_up",
+              "order_cancelled", "chaos_changed", "grpc_request", "error"}
 
 
 def test_every_log_line_is_json_with_required_fields(client):
@@ -133,18 +141,18 @@ def test_request_id_header_is_generated_and_bounded(client):
     assert r.headers["X-Request-ID"] == "x" * 64
 
 
-# ----------------------------------------------------------------------------- stage 8: chaos
+# ----------------------------------------------------------------------------- chaos
 def test_slow_every_nth_request(client):
     import time
 
-    client.post("/chaos/reset")
-    assert client.post("/chaos", json={"slow_every_n": 2, "delay_ms": 120}).json()["slow_every_n"] == 2
+    client.delete("/chaos")
+    assert client.put("/chaos", json={"slow_every_n": 2, "delay_ms": 120}).json()["slow_every_n"] == 2
     durations = []
     for _ in range(6):
         t0 = time.perf_counter()
         client.get("/orders/nope")
         durations.append(time.perf_counter() - t0)
-    client.post("/chaos/reset")
+    assert client.delete("/chaos").status_code == 204
     assert sum(1 for d in durations if d >= 0.12) == 3                       # exactly every second /orders call
     slow_server_side = (sample("canteen_http_request_duration_seconds_bucket", method="GET", route="/orders/{order_id}", le="+Inf")
                         - sample("canteen_http_request_duration_seconds_bucket", method="GET", route="/orders/{order_id}", le="0.1"))
@@ -152,13 +160,14 @@ def test_slow_every_nth_request(client):
 
 
 def test_closed_shop_returns_503_and_counts_as_error(client):
-    client.post("/chaos", json={"fail_shop": "grito"})
+    client.put("/chaos", json={"fail_shop": "grito"})
     before = sample("canteen_http_requests_total", method="POST", route="/orders", status="503")
-    assert client.post("/orders", json={"shop": "grito", "item": "corn"}).status_code == 503
+    r = client.post("/orders", json={"shop": "grito", "item": "corn"})
+    assert r.status_code == 503 and r.json()["error"]["code"] == "shop_closed"
     assert client.post("/orders", json={"shop": "sky_dhaba", "item": "chai"}).status_code == 201
-    client.post("/chaos/reset")
+    client.delete("/chaos")
     assert sample("canteen_http_requests_total", method="POST", route="/orders", status="503") == before + 1
-    assert client.post("/chaos", json={"fail_shop": "pizza"}).status_code == 400
+    assert client.put("/chaos", json={"fail_shop": "pizza"}).status_code == 422
 
 
 def test_demo_counter_only_counts_client_chosen_request_ids(client):

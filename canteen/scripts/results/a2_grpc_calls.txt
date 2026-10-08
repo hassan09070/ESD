@@ -1,0 +1,16 @@
+$ uv run python scripts/grpc_client.py --shop tapal --item biryani --request-id trace-demo-1
+OK     order_id=4d00889b shop=tapal state=waiting replayed=False (33.4 ms) request_id=trace-demo-1
+
+$ uv run python scripts/grpc_client.py --shop pizza --item x
+ERROR  INVALID_ARGUMENT: unknown shop 'pizza'; choose one of ['sky_dhaba', 'tapal', 'cafetogo', 'grito'] (3.0 ms) request_id=5c51b8c054fd
+exit code: 1
+
+$ uv run python scripts/grpc_client.py --shop grito --item "ice cream" --key grpc-key-1   (twice)
+OK     order_id=c44ec615 shop=grito state=waiting replayed=False (5.1 ms) request_id=5d88ff7487f4
+OK     order_id=c44ec615 shop=grito state=waiting replayed=True (2.8 ms) request_id=b47693289944
+
+$ # Part C: repeatable success and failure calls to populate the panels
+$ uv run python scripts/grpc_client.py --shop tapal --item pulao --count 20 | sort | uniq -c | cut -c1-60
+  20 OK    
+$ uv run python scripts/grpc_client.py --shop nowhere --item x --count 5
+   5 ERROR 

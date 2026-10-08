@@ -1,6 +1,6 @@
 # canteen
 
-A university canteen order queue, built small on purpose so that every part of its observability stack can be understood: Prometheus + Grafana + Node Exporter for metrics, Filebeat + Elasticsearch + Kibana for logs. Enterprise Software Development, Fall 2026, Assignment 1. `REPORT.md` is the report (sections A–E, diagram and failure analysis included).
+A university canteen order queue, built small on purpose so that every part of its observability stack can be understood: Prometheus + Grafana + Node Exporter for metrics, Filebeat + Elasticsearch + Kibana for logs. Enterprise Software Development, Fall 2026. `REPORT.md` is the Assignment 1 report (observability); `REPORT2.md` is the Assignment 2 report (HTTP API practices, gRPC service, metrics).
 
 ## What it is
 
@@ -12,7 +12,7 @@ POST /orders {shop,item} -> waiting --POST /orders/{id}/ready--> ready --POST /o
                                 +---------- POST /orders/{id}/cancel ----------> cancelled
 ```
 
-The app is one FastAPI file with an in-memory dict (`app/main.py`, ~200 lines). It records 9 Prometheus metrics (all four types, business and application), writes one JSON log line per event, and has chaos endpoints to make it slow or partly broken for the experiments.
+The HTTP API is `app/main.py`; the business rules and the data are `app/store.py`, a SQLite file on the `app_data` volume that the gRPC service (`grpc_service/server.py`, Assignment 2) shares, so `PlaceOrder` over gRPC and `POST /orders` over HTTP create the same orders. The HTTP API It records 9 Prometheus metrics (all four types, business and application), writes one JSON log line per event, and has chaos endpoints to make it slow or partly broken for the experiments.
 
 ## Prerequisites
 
@@ -28,10 +28,11 @@ docker compose ps                # wait until elasticsearch and kibana are "heal
 
 | Service | Open | Notes |
 |---|---|---|
-| canteen | [Swagger UI](http://localhost:8000/docs) · [/health](http://localhost:8000/health) · [/metrics](http://localhost:8000/metrics) · [/shops](http://localhost:8000/shops) · [/chaos](http://localhost:8000/chaos) | every endpoint has "Try it out" |
+| canteen | [Swagger UI](http://localhost:8000/docs) · [openapi.json](http://localhost:8000/openapi.json) · [/health](http://localhost:8000/health) · [/metrics](http://localhost:8000/metrics) · [/shops](http://localhost:8000/shops) · [/chaos](http://localhost:8000/chaos) | every endpoint has "Try it out" |
+| grpc | `localhost:50051` (gRPC) · [/metrics](http://localhost:9095/metrics) | `PlaceOrder` as a separate process; call it with `scripts/grpc_client.py` |
 | load | `docker logs -f canteen-load` | continuous random traffic (6 customers, busy/quiet cycle, rushes, lulls); one status line a minute |
-| Prometheus | [Targets](http://localhost:9090/targets) · [Query](http://localhost:9090/query) | `canteen`, `node`, `prometheus` must be UP |
-| Grafana | [Application](http://localhost:3000/d/canteen-app) · [Business](http://localhost:3000/d/canteen-business) · [Node Exporter](http://localhost:3000/d/canteen-node) | login `admin` / `admin` |
+| Prometheus | [Targets](http://localhost:9090/targets) · [Query](http://localhost:9090/query) | `canteen`, `grpc`, `node`, `prometheus` must be UP |
+| Grafana | [Application](http://localhost:3000/d/canteen-app) · [Business](http://localhost:3000/d/canteen-business) · [Node Exporter](http://localhost:3000/d/canteen-node) · [HTTP vs gRPC](http://localhost:3000/d/canteen-grpc) | login `admin` / `admin` |
 | Kibana | [Discover](<http://localhost:5601/app/discover#/?_g=(time:(from:now-1h,to:now))&_a=(index:'canteen-logs')>) | data view **canteen logs** |
 | Elasticsearch | [indices](http://localhost:9200/_cat/indices/canteen-logs-*?v) · [count](http://localhost:9200/canteen-logs-*/_count) | |
 
@@ -42,6 +43,7 @@ Node Exporter runs on the host network and is not published on a Mac; see it at 
 
 Ready-made views for the report (Prometheus/Grafana open on the last hour; Kibana on the last hour, change the range as needed):
 
+- **HTTP vs gRPC place-order dashboard** — [Grafana](http://localhost:3000/d/canteen-grpc?from=now-1h&to=now) · [gRPC calls by code](<http://localhost:9090/query?g0.expr=sum%20by%20%28grpc_code%29%20%28rate%28canteen_grpc_server_handled_total%5B5m%5D%29%29&g0.tab=graph&g0.range_input=1h>)
 - **Orders per minute by shop** — [Prometheus graph](<http://localhost:9090/query?g0.expr=sum%20by%20%28shop%29%20%28rate%28canteen_orders_placed_total%5B5m%5D%29%29%20%2A%2060&g0.tab=graph&g0.range_input=1h>) · [Grafana Business](http://localhost:3000/d/canteen-business?from=now-1h&to=now)
 - **HTTP p95 (1m window)** — [Prometheus graph](<http://localhost:9090/query?g0.expr=histogram_quantile%280.95%2C%20sum%20by%20%28le%29%20%28rate%28canteen_http_request_duration_seconds_bucket%5B1m%5D%29%29%29&g0.tab=graph&g0.range_input=1h>) · [Grafana Application](http://localhost:3000/d/canteen-app?from=now-1h&to=now)
 - **Machine (Node Exporter)** — [Grafana Node Exporter](http://localhost:3000/d/canteen-node?from=now-1h&to=now) · [node target](http://localhost:9090/targets?search=node)
@@ -70,16 +72,39 @@ Traffic is generated all the time by the `load` service, so Grafana → canteen 
 Faults (Part E), toggled over HTTP, no restart:
 
 ```sh
-curl -s -X POST localhost:8000/chaos -H 'Content-Type: application/json' -d '{"slow_every_n":5,"delay_ms":500}'   # every 5th /orders call sleeps 500 ms
-curl -s -X POST localhost:8000/chaos -H 'Content-Type: application/json' -d '{"fail_shop":"tapal"}'           # tapal answers 503
-curl -s -X POST localhost:8000/chaos/reset
+curl -s -X PUT localhost:8000/chaos -H 'Content-Type: application/json' -d '{"slow_every_n":5,"delay_ms":500}'   # every 5th /orders call sleeps 500 ms
+curl -s -X PUT localhost:8000/chaos -H 'Content-Type: application/json' -d '{"fail_shop":"tapal"}'           # tapal answers 503
+curl -s -X DELETE localhost:8000/chaos                                                                        # back to defaults (204)
+```
+
+### Assignment 2: API practices, gRPC, clients
+
+Every error has one shape, `{"error": {"code", "message", "details"}}`; invalid input is 422, an unknown order 404, an impossible transition 409, a closed shop 503. `POST /orders` accepts two optional headers:
+
+```sh
+# Idempotency-Key: repeating the request returns the first order (header Idempotent-Replayed: true), never a second one
+curl -si -X POST localhost:8000/orders -H 'Content-Type: application/json' -H 'Idempotency-Key: my-order-1' -d '{"shop":"tapal","item":"biryani"}'
+# X-Client-ID: the rate-limit key (60 orders per 60 s per client; without it the client IP is the key) -> 429 + Retry-After when exceeded
+scripts/ratelimit_demo.sh                       # 65 quick orders from one client: 60 x 201, then 429 with Retry-After
+python3 scripts/caller.py                       # a service calling POST /orders: 2 s timeout, 3 retries with backoff, circuit breaker
+python3 scripts/caller.py --demo                # success -> retries on 503 -> breaker open -> recovery (toggles /chaos on tapal for ~10 s)
+uv run python scripts/grpc_client.py --shop tapal --item biryani            # the gRPC PlaceOrder, 2 s deadline, x-request-id metadata
+uv run python scripts/grpc_client.py --shop pizza --item x                  # -> INVALID_ARGUMENT
+uv run python scripts/grpc_client.py --shop tapal --item pulao --count 20   # repeatable calls for the dashboard
+```
+
+The OpenAPI document is `openapi.json` (regenerate with `uv run python scripts/export_openapi.py` after changing a route; a test checks it matches the app). The gRPC contract is `grpc_service/canteen.proto`; regenerate the Python code with
+
+```sh
+uv run python -m grpc_tools.protoc -I . --python_out=. --grpc_python_out=. --pyi_out=. grpc_service/canteen.proto
 ```
 
 ## Test
 
 ```sh
 uv sync
-uv run pytest        # 12 tests: lifecycle, metrics, logs, chaos; no Docker needed
+uv run pytest        # 22 tests, no Docker needed: tests/test_app.py (lifecycle, metrics, logs, chaos), tests/test_api_practices.py
+                     # (error format, idempotency, rate limit, OpenAPI), tests/test_grpc.py (gRPC server in-process, shared store)
 ```
 
 ## Run the experiments
@@ -97,6 +122,7 @@ Both leave the app with chaos reset and `CANTEEN_DEMO_CARDINALITY=0`. Raw output
 - **canteen / Application** — requests/s by status and by route, HTTP p50/p95/p99 and p95 by route, error rate, mean latency.
 - **canteen / Business** — orders waiting, placed and cancelled, busiest shop, cancel rate, orders/min by shop, the waiting gauge by shop, prep-time p95 (histogram) next to prep-time mean (summary), pickup delay (the self-explored metric), cancellations/min.
 - **canteen / Node Exporter (machine)** — the machine name, CPU, memory, disk, network, load, disk I/O.
+- **canteen / HTTP vs gRPC: place order** (Assignment 2) — calls/s by HTTP status and by gRPC code, error share, p50/p95 of both versions over 5 minutes, gRPC in-flight calls, idempotent replays and 429s.
 
 Dashboards are JSON files in `monitoring/grafana/dashboards/`; Grafana re-reads them every 30 s. Kibana queries used in the report are in `scripts/kibana_queries.md`.
 

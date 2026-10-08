@@ -1,0 +1,8 @@
+$ # Kibana / ES: every log line carrying the request id the gRPC client sent
+$ curl -s "localhost:9200/canteen-logs-*/_search?q=request_id:trace-demo-1&sort=@timestamp:asc&size=5"  (abridged)
+{"@timestamp": "2026-10-08T12:20:12.161Z", "event": "order_placed", "msg": "order placed at tapal", "request_id": "trace-demo-1", "order_id": "4d00889b", "container": "canteen-grpc"}
+{"@timestamp": "2026-10-08T12:20:12.162Z", "event": "grpc_request", "msg": "PlaceOrder -> OK", "request_id": "trace-demo-1", "grpc_method": "PlaceOrder", "grpc_code": "OK", "duration_ms": 15.7, "container": "canteen-grpc"}
+
+$ # the order the gRPC call created, read through the HTTP API (same store)
+$ curl -s localhost:8000/orders/4d00889b
+{"order_id":"4d00889b","shop":"tapal","item":"biryani","state":"waiting","placed_at":1791462012.1472425,"ready_at":null,"picked_up_at":null,"cancelled_at":null}

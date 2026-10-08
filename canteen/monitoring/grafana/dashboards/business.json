@@ -41,7 +41,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(canteen_orders_waiting)",
+          "expr": "sum(max by (shop) (canteen_orders_waiting))",
           "legendFormat": "waiting",
           "refId": "A"
         }
@@ -357,7 +357,7 @@
       "id": 13,
       "type": "timeseries",
       "title": "Orders waiting, by shop",
-      "description": "The gauge as-is: goes up when an order is placed, down when it is ready or cancelled. A shop whose line keeps rising is falling behind.",
+      "description": "The gauge is read from the shared store by both the HTTP app and the gRPC service, so max by (shop) picks the one value. Goes up when an order is placed, down when it is ready or cancelled.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -374,7 +374,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "canteen_orders_waiting",
+          "expr": "max by (shop) (canteen_orders_waiting)",
           "legendFormat": "{{shop}}",
           "refId": "A"
         }
