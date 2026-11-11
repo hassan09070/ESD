@@ -1,62 +1,106 @@
-# canteen stack: the app + metrics (Prometheus, Grafana, Node Exporter) + logs (Filebeat,
-# Elasticsearch, Kibana) + a one-shot `setup` job that installs the ILM policy, the index
-# template and the Kibana data view before Filebeat ships the first line.
+# canteen stack (Assignment 3): three identical application replicas A, B, C behind Envoy
+# + metrics (Prometheus, Grafana, Node Exporter) + logs (Filebeat, Elasticsearch, Kibana) + a
+# one-shot `setup` job that installs the ILM policy, the index template and the Kibana data
+# view before Filebeat ships the first line.
 #
-# Named volumes survive `docker compose down` but not `down -v`: prom_data (TSDB, 7 d
-# retention), grafana_data (users/prefs), es_data (indices, deleted by ILM after 7 d),
-# filebeat_registry (read offsets, so a Filebeat restart does not re-ship old lines).
-# The app's raw stdout is kept by Docker's json-file driver (3 x 10 MB) and removed with
-# the container.
-services:
-  app:
-    build:
-      context: .
-      dockerfile: app/Dockerfile
-    container_name: canteen-app
-    environment:
-      CANTEEN_DEMO_CARDINALITY: ${CANTEEN_DEMO_CARDINALITY:-0}   # Part E.2 toggle; re-create the app to apply
-      CANTEEN_DB: /data/canteen.db                                 # A2: the store shared with the grpc service
-    volumes:
-      - app_data:/data
-    ports:
-      - "8000:8000"
-    logging:
-      driver: json-file            # the file Filebeat reads: /var/lib/docker/containers/<id>/<id>-json.log
-      options:
-        max-size: "10m"
-        max-file: "3"
+#   HTTP / gRPC clients --> envoy :8000 (HTTP) / :50051 (gRPC) --> app-a | app-b | app-c  (:8000 HTTP + :50051 gRPC each)
+#                                                                   \___ one SQLite file on app_data ___/
+#
+# Each replica is one process (app/replica.py) serving both interfaces, with CANTEEN_REPLICA
+# set to A, B or C and a fixed IP (Envoy's clusters are STATIC: only its active health checks
+# decide membership, see envoy/render.py). The replicas are also published directly on
+# 8001/8002/8003 so a fault can be set on one of them (PUT /chaos) and Prometheus scrapes
+# them by name, never through Envoy. ENVOY_MODE picks the balancing config
+# (a_only | round_robin | weighted | least_request); scripts/envoy_mode.sh switches it.
+#
+# Named volumes survive `docker compose down` but not `down -v`: app_data (the SQLite store,
+# shared by the three replicas), prom_data (TSDB, 7 d retention), grafana_data (users/prefs),
+# es_data (indices, deleted by ILM after 7 d), filebeat_registry (read offsets, so a Filebeat
+# restart does not re-ship old lines). Containers' raw stdout is kept by Docker's json-file
+# driver (3 x 10 MB) and removed with the container.
 
-  # A2 Part B: PlaceOrder as a gRPC service in its own process, same image, same rules
-  # (app/store.py), same SQLite file (app_data volume) as the HTTP API. Port 50051 = gRPC,
-  # 9095 = its own /metrics for Prometheus. Filebeat tails this container too.
-  grpc:
+# One definition for the three replicas; only CANTEEN_REPLICA, the name, the host port and the IP differ.
+# app-a builds the image (app/Dockerfile); app-b and app-c run the same image, never pulled.
+x-replica: &replica
+  image: canteen-app:a3
+  pull_policy: never
+  volumes:
+    - app_data:/data
+  logging:
+    driver: json-file            # the file Filebeat reads: /var/lib/docker/containers/<id>/<id>-json.log
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-replica-env: &replica-env
+  CANTEEN_DB: /data/canteen.db                                 # the store shared by all replicas (orders + idempotency keys)
+  CANTEEN_DEMO_CARDINALITY: ${CANTEEN_DEMO_CARDINALITY:-0}   # A1 Part E.2 toggle; re-create the replicas to apply
+  GRPC_PORT: "50051"
+
+services:
+  app-a:
+    <<: *replica
     build:
       context: .
       dockerfile: app/Dockerfile
-    container_name: canteen-grpc
-    command: ["python", "-m", "grpc_service.server"]
+    pull_policy: build
+    container_name: canteen-app-a
     environment:
-      CANTEEN_DB: /data/canteen.db
-      GRPC_PORT: "50051"
-      GRPC_METRICS_PORT: "9095"
-    volumes:
-      - app_data:/data
+      <<: *replica-env
+      CANTEEN_REPLICA: A
     ports:
-      - "50051:50051"
-      - "9095:9095"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost', 50051), 2).close()"]
-      interval: 10s
-      timeout: 3s
-      start_period: 5s
-      retries: 3
+      - "8001:8000"              # direct access to A (chaos, inspection); clients use Envoy on 8000
+    networks:
+      default:
+        ipv4_address: 172.28.0.11
+
+  app-b:
+    <<: *replica
+    container_name: canteen-app-b
+    environment:
+      <<: *replica-env
+      CANTEEN_REPLICA: B
+    ports:
+      - "8002:8000"
+    networks:
+      default:
+        ipv4_address: 172.28.0.12
+
+  app-c:
+    <<: *replica
+    container_name: canteen-app-c
+    environment:
+      <<: *replica-env
+      CANTEEN_REPLICA: C
+    ports:
+      - "8003:8000"
+    networks:
+      default:
+        ipv4_address: 172.28.0.13
+
+  # A3: the load balancer. 8000 -> listener 10000 (HTTP/1.1), 50051 -> listener 10001 (HTTP/2,
+  # gRPC), 9901 = admin (stats, clusters, health). Config files are generated by envoy/render.py.
+  envoy:
+    image: envoyproxy/envoy:v1.33.0
+    container_name: canteen-envoy
+    command: ["envoy", "-c", "/etc/envoy/${ENVOY_MODE:-round_robin}.yaml", "--log-level", "warn", "--service-node", "canteen-envoy", "--service-cluster", "canteen"]
+    volumes:
+      - ./envoy:/etc/envoy:ro
+    ports:
+      - "8000:10000"
+      - "50051:10001"
+      - "9901:9901"
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
     depends_on:
-      app:
+      app-a:
+        condition: service_healthy
+      app-b:
+        condition: service_healthy
+      app-c:
         condition: service_healthy
 
   # Continuous, realistic random traffic so the dashboards and Kibana are never empty.
@@ -68,12 +112,11 @@ services:
     volumes:
       - ./scripts/load.py:/scripts/load.py:ro
     environment:
-      CANTEEN_URL: http://app:8000
+      CANTEEN_URL: http://envoy:10000     # A3: through the load balancer, like every other client
       LOAD_CUSTOMERS: "6"          # customers in flight; think time between orders follows the busy/quiet cycle
       LOAD_PERIOD_MIN: "20"        # minutes per busy/quiet cycle, plus random rushes and lulls
     depends_on:
-      app:
-        condition: service_healthy
+      - envoy
     restart: unless-stopped
 
   prometheus:
@@ -91,8 +134,10 @@ services:
     extra_hosts:
       - "node-exporter:172.17.0.1"      # docker0 gateway = the host/VM as seen from a bridge network
     depends_on:
-      - app
-      - grpc
+      - app-a
+      - app-b
+      - app-c
+      - envoy
       - node-exporter
 
   # Node Exporter reports the kernel it runs on. pid/uts/network namespaces are the host's
@@ -124,7 +169,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana          # users/prefs only; dashboards come from the files above
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"     # GRAFANA_PORT=3001 if something else holds 3000
     depends_on:
       - prometheus
 
@@ -213,8 +258,14 @@ services:
       setup:
         condition: service_completed_successfully
 
+networks:
+  default:                             # the compose network, with a known subnet so the replicas can have fixed IPs
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
 volumes:
-  app_data:                            # the SQLite store (orders), shared by app and grpc
+  app_data:                            # the SQLite store (orders, idempotency keys), shared by the three replicas
   prom_data:
   grafana_data:
   es_data:

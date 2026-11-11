@@ -3,7 +3,7 @@
   "info": {
     "title": "canteen",
     "description": "Order queue for four university food shops. Every error has the shape `{\"error\": {\"code\", \"message\", \"details\"}}`.",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "paths": {
     "/health": {
@@ -400,7 +400,7 @@
         "tags": [
           "chaos"
         ],
-        "summary": "Current fault settings",
+        "summary": "Current fault settings of this replica",
         "operationId": "chaos_status_chaos_get",
         "responses": {
           "200": {
@@ -419,8 +419,8 @@
         "tags": [
           "chaos"
         ],
-        "summary": "Replace the fault settings",
-        "description": "Replace the whole settings object. `{\"slow_every_n\": 5, \"delay_ms\": 500}` is the A1 brief's example fault.",
+        "summary": "Replace the fault settings of this replica",
+        "description": "Replace the whole settings object. `{\"slow_every_n\": 5, \"delay_ms\": 500}` is the A1 brief's example fault;\n`{\"fixed_delay_ms\": 200}` is A3's slow replica (HTTP and gRPC). Settings are per replica: call the replica directly, not Envoy.",
         "operationId": "chaos_set_chaos_put",
         "requestBody": {
           "content": {
@@ -459,7 +459,7 @@
         "tags": [
           "chaos"
         ],
-        "summary": "Reset the fault settings to defaults",
+        "summary": "Reset the fault settings of this replica to defaults",
         "operationId": "chaos_reset_chaos_delete",
         "responses": {
           "204": {
@@ -505,11 +505,19 @@
             ],
             "title": "Fail Shop",
             "description": "this shop answers 503 'closed' to every new order"
+          },
+          "fixed_delay_ms": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "minimum": 0.0,
+            "title": "Fixed Delay Ms",
+            "description": "A3: every HTTP request and every gRPC call on this replica sleeps this long (0 = off)",
+            "default": 0
           }
         },
         "type": "object",
         "title": "Chaos",
-        "description": "Faults for A1 Part E, toggled over HTTP so an experiment needs no restart."
+        "description": "Faults toggled over HTTP so an experiment needs no restart."
       },
       "ErrorBody": {
         "properties": {

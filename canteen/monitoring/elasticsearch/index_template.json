@@ -1,6 +1,8 @@
 {
-  "_comment": "Index template for canteen-logs-*: binds the ILM policy, 1 shard / 0 replicas (single node), and explicit types for the fields the Kibana searches use. Anything else is mapped dynamically.",
-  "index_patterns": ["canteen-logs-*"],
+  "_comment": "Index template for canteen-logs-*: binds the ILM policy, 1 shard / 0 replicas (single node), and explicit types for the fields the Kibana searches use (replica logs and, since A3, Envoy's access log share request_id, method, path, status_code, duration_ms, grpc_code, replica). Anything else is mapped dynamically.",
+  "index_patterns": [
+    "canteen-logs-*"
+  ],
   "priority": 500,
   "template": {
     "settings": {
@@ -12,29 +14,124 @@
     "mappings": {
       "dynamic": true,
       "properties": {
-        "@timestamp": {"type": "date"},
-        "ts": {"type": "date"},
-        "level": {"type": "keyword"},
-        "service": {"type": "keyword"},
-        "event": {"type": "keyword"},
-        "msg": {"type": "text"},
-        "message": {"type": "text"},
-        "request_id": {"type": "keyword"},
-        "order_id": {"type": "keyword"},
-        "shop": {"type": "keyword"},
-        "method": {"type": "keyword"},
-        "path": {"type": "keyword"},
-        "route": {"type": "keyword"},
-        "status_code": {"type": "integer"},
-        "duration_ms": {"type": "float"},
-        "prep_s": {"type": "float"},
-        "pickup_delay_s": {"type": "float"},
-        "queue_length": {"type": "integer"},
-        "was_ready": {"type": "boolean"},
-        "grpc_method": {"type": "keyword"},
-        "grpc_code": {"type": "keyword"},
-        "exc_type": {"type": "keyword"},
-        "container": {"properties": {"id": {"type": "keyword"}, "name": {"type": "keyword"}}}
+        "@timestamp": {
+          "type": "date"
+        },
+        "ts": {
+          "type": "date"
+        },
+        "level": {
+          "type": "keyword"
+        },
+        "service": {
+          "type": "keyword"
+        },
+        "event": {
+          "type": "keyword"
+        },
+        "msg": {
+          "type": "text"
+        },
+        "message": {
+          "type": "text"
+        },
+        "request_id": {
+          "type": "keyword"
+        },
+        "order_id": {
+          "type": "keyword"
+        },
+        "shop": {
+          "type": "keyword"
+        },
+        "method": {
+          "type": "keyword"
+        },
+        "path": {
+          "type": "keyword"
+        },
+        "route": {
+          "type": "keyword"
+        },
+        "status_code": {
+          "type": "integer"
+        },
+        "duration_ms": {
+          "type": "float"
+        },
+        "prep_s": {
+          "type": "float"
+        },
+        "pickup_delay_s": {
+          "type": "float"
+        },
+        "queue_length": {
+          "type": "integer"
+        },
+        "was_ready": {
+          "type": "boolean"
+        },
+        "grpc_method": {
+          "type": "keyword"
+        },
+        "grpc_code": {
+          "type": "keyword"
+        },
+        "exc_type": {
+          "type": "keyword"
+        },
+        "container": {
+          "properties": {
+            "id": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            }
+          }
+        },
+        "replica": {
+          "type": "keyword"
+        },
+        "listener": {
+          "type": "keyword"
+        },
+        "authority": {
+          "type": "keyword"
+        },
+        "protocol": {
+          "type": "keyword"
+        },
+        "response_flags": {
+          "type": "keyword"
+        },
+        "upstream_host": {
+          "type": "keyword"
+        },
+        "upstream_cluster": {
+          "type": "keyword"
+        },
+        "upstream_ms": {
+          "type": "float"
+        },
+        "bytes_received": {
+          "type": "long"
+        },
+        "bytes_sent": {
+          "type": "long"
+        },
+        "grpc_port": {
+          "type": "integer"
+        },
+        "cluster_name": {
+          "type": "keyword"
+        },
+        "health_checker_type": {
+          "type": "keyword"
+        },
+        "upstream_address": {
+          "type": "keyword"
+        }
       }
     }
   }

@@ -1,0 +1,35 @@
+{
+ "label": "d_failure",
+ "interface": "http",
+ "operation": "GET /shops",
+ "start": "2026-11-09T08:05:03Z",
+ "end": "2026-11-09T08:06:03Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 2336,
+ "failures": 64,
+ "by_outcome": {
+  "200": 2336,
+  "503": 64
+ },
+ "by_replica": {
+  "?": 64,
+  "A": 929,
+  "B": 483,
+  "C": 924
+ },
+ "shares_pct": {
+  "?": 2.7,
+  "A": 38.7,
+  "B": 20.1,
+  "C": 38.5
+ },
+ "p50_ms": 5.7,
+ "p95_ms": 12.4,
+ "max_ms": 1011.1,
+ "p95_ok_ms": 9.8,
+ "timeout_s": 5.0
+}

@@ -1,0 +1,101 @@
+| Run / interface | Policy and fault | Target / actual req/s | A/B/C shares (replica metrics) | A/B/C shares (Envoy log) | Client p95 | Error rate |
+|---|---|---|---|---|---|---|
+| b_a_only / http | a_only, none | 40 / 40.0 | 100% / 0% / 0% | 100% / 0% / 0% | 9.1 ms | 0.0% (0 of 2400) |
+| b_a_only / grpc | a_only, none | 40 / 40.0 | 100% / 0% / 0% | 100% / 0% / 0% | 8.3 ms | 0.0% (1 of 2400) |
+| c_rr / http | round_robin, none | 40 / 40.0 | 33% / 33% / 34% | 33% / 33% / 33% | 9.1 ms | 0.0% (0 of 2400) |
+| c_rr / grpc | round_robin, none | 40 / 40.0 | 33% / 33% / 33% | 33% / 33% / 33% | 9.1 ms | 0.0% (0 of 2400) |
+| d_weighted / http | weighted, none | 40 / 40.0 | 50% / 25% / 25% | 50% / 25% / 25% | 9.6 ms | 0.0% (0 of 2400) |
+| d_weighted / grpc | weighted, none | 40 / 40.0 | 50% / 25% / 25% | 50% / 25% / 25% | 8.9 ms | 0.0% (0 of 2400) |
+| d_rr_slow / http | round_robin, B +200ms | 40 / 40.0 | 33% / 33% / 33% | 33% / 33% / 33% | 209.4 ms | 0.0% (0 of 2400) |
+| d_rr_slow / grpc | round_robin, B +200ms | 40 / 40.0 | 33% / 33% / 33% | 33% / 33% / 33% | 208.7 ms | 0.0% (1 of 2400) |
+| d_lr_slow / http | least_request, B +200ms | 40 / 40.0 | 40% / 14% / 45% | 41% / 14% / 45% | 208.2 ms | 0.0% (0 of 2400) |
+| d_lr_slow / grpc | least_request, B +200ms | 40 / 40.0 | 43% / 15% / 42% | 43% / 15% / 42% | 207.7 ms | 0.0% (0 of 2400) |
+| d_failure / http | round_robin, stop B @20s, start @40s | 40 / 40.0 | 41% / 18% / 41% | 40% / 20% / 40% | 12.4 ms | 2.7% (64 of 2400) |
+| d_failure / grpc | round_robin, stop B @20s, start @40s | 40 / 40.0 | 41% / 18% / 41% | 40% / 21% / 40% | 10.1 ms | 2.2% (53 of 2400) |
+
+=== b_a_only / http  2026-11-09T07:53:34Z -> 2026-11-09T07:54:34Z  mode=a_only fault=none
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 6.2 ms p95 9.1 ms max 25.3 ms outcomes {'200': 2400} replicas {'A': 2400}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A           2400  100.0%       0        0.00      2.5      4.8     2400
+  B              0    0.0%       0        0.00      0.0      0.0        0
+  C              0    0.0%       0        0.00      0.0      0.0        0
+
+=== b_a_only / grpc  2026-11-09T07:54:39Z -> 2026-11-09T07:55:40Z  mode=a_only fault=none
+  client: sent 2400 answered 2400 ok 2399 failed 1 p50 5.7 ms p95 8.3 ms max 113.1 ms outcomes {'OK': 2399, 'INTERNAL': 1} replicas {'A': 2400}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A           2440  100.0%       1        0.08      2.5      4.8     2276
+  B              0    0.0%       0        0.00      0.0      0.0        0
+  C              0    0.0%       0        0.00      0.0      0.0        0
+
+=== c_rr / http  2026-11-09T07:55:51Z -> 2026-11-09T07:56:52Z  mode=round_robin fault=none
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 5.6 ms p95 9.1 ms max 60.7 ms outcomes {'200': 2400} replicas {'A': 802, 'B': 798, 'C': 800}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            811   33.4%       0        0.00      2.5      4.8      802
+  B            800   33.0%       0        0.00      2.5      4.8      798
+  C            814   33.6%       0        0.08      2.5      4.8      800
+
+=== c_rr / grpc  2026-11-09T07:56:57Z -> 2026-11-09T07:57:57Z  mode=round_robin fault=none
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 5.4 ms p95 9.1 ms max 103.0 ms outcomes {'OK': 2400} replicas {'A': 800, 'B': 800, 'C': 800}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            800   33.3%       0        0.00      2.5      4.8      800
+  B            801   33.4%       0        0.00      2.5      4.8      800
+  C            800   33.3%       0        0.00      2.5      4.8      800
+
+=== d_weighted / http  2026-11-09T07:58:09Z -> 2026-11-09T07:59:09Z  mode=weighted fault=none
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 5.6 ms p95 9.6 ms max 66.5 ms outcomes {'200': 2400} replicas {'A': 1199, 'B': 601, 'C': 600}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A           1202   50.0%       0        0.00      2.5      4.8     1199
+  B            599   24.9%       0        0.00      2.5      4.8      601
+  C            602   25.1%       0        0.00      2.5      4.8      600
+
+=== d_weighted / grpc  2026-11-09T07:59:14Z -> 2026-11-09T08:00:15Z  mode=weighted fault=none
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 5.2 ms p95 8.9 ms max 68.6 ms outcomes {'OK': 2400} replicas {'A': 1200, 'B': 600, 'C': 600}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A           1220   50.0%       0        0.00      2.5      4.8     1200
+  B            610   25.0%       0        0.00      2.5      4.8      600
+  C            610   25.0%       0        0.00      2.5      4.8      600
+
+=== d_rr_slow / http  2026-11-09T08:00:27Z -> 2026-11-09T08:01:27Z  mode=round_robin fault=B +200ms
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 7.8 ms p95 209.4 ms max 242.0 ms outcomes {'200': 2400} replicas {'A': 800, 'B': 800, 'C': 800}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            800   33.3%       0        0.00      2.5      4.8      800
+  B            798   33.2%       0        2.92    175.0    242.5      800
+  C            803   33.4%       0        0.00      2.5      4.8      800
+
+=== d_rr_slow / grpc  2026-11-09T08:01:32Z -> 2026-11-09T08:02:33Z  mode=round_robin fault=B +200ms
+  client: sent 2400 answered 2400 ok 2399 failed 1 p50 7.3 ms p95 208.7 ms max 225.7 ms outcomes {'OK': 2399, 'INTERNAL': 1} replicas {'A': 800, 'B': 800, 'C': 800}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            813   33.4%       0        0.00      2.5      4.8      800
+  B            813   33.4%       1        2.67    175.0    242.5      800
+  C            808   33.2%       0        0.00      2.5      4.8      800
+
+=== d_lr_slow / http  2026-11-09T08:02:45Z -> 2026-11-09T08:03:45Z  mode=least_request fault=B +200ms
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 6.4 ms p95 208.2 ms max 236.7 ms outcomes {'200': 2400} replicas {'A': 975, 'B': 347, 'C': 1078}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            963   40.3%       0        0.00      2.5      4.8      975
+  B            341   14.3%       0        0.92    175.0    242.5      347
+  C           1083   45.4%       0        0.00      2.5      4.8     1078
+
+=== d_lr_slow / grpc  2026-11-09T08:03:50Z -> 2026-11-09T08:04:51Z  mode=least_request fault=B +200ms
+  client: sent 2400 answered 2400 ok 2400 failed 0 p50 6.4 ms p95 207.7 ms max 586.0 ms outcomes {'OK': 2400} replicas {'A': 1027, 'B': 364, 'C': 1009}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A           1033   42.9%       0        0.00      2.6      4.9     1027
+  B            366   15.2%       0        1.23    175.4    243.3      364
+  C           1009   41.9%       0        0.00      2.6      4.9     1009
+
+=== d_failure / http  2026-11-09T08:05:03Z -> 2026-11-09T08:06:03Z  mode=round_robin fault=stop B @20s, start @40s
+  client: sent 2400 answered 2400 ok 2336 failed 64 p50 5.7 ms p95 12.4 ms max 1011.1 ms outcomes {'200': 2336, '503': 64} replicas {'?': 64, 'A': 929, 'B': 483, 'C': 924}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            939   41.2%       0        0.00      2.6      4.9      913
+  B            405   17.8%       0        0.00      2.5      4.8      469
+  C            936   41.1%       0        0.00      2.5      4.8      911
+  envoy-log events with no replica (no upstream answered, e.g. 503 UF/UH): 64
+
+=== d_failure / grpc  2026-11-09T08:06:23Z -> 2026-11-09T08:07:23Z  mode=round_robin fault=stop B @20s, start @40s
+  client: sent 2400 answered 2400 ok 2347 failed 53 p50 5.5 ms p95 10.1 ms max 1004.7 ms outcomes {'OK': 2347, 'UNAVAILABLE': 53} replicas {'-': 53, 'A': 928, 'B': 489, 'C': 930}
+  replica  handled   share   errors  active(avg)  p50 ms   p95 ms   envoy-log
+  A            939   41.0%       0        0.00      2.5      4.8      912
+  B            412   18.0%       0        0.00      2.5      4.8      473
+  C            941   41.1%       0        0.00      2.5      4.8      914
+  envoy-log events with no replica (no upstream answered, e.g. 503 UF/UH): 53
+

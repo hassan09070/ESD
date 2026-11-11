@@ -22,6 +22,12 @@ Assignment 2 Part A, applied to every application endpoint:
   - POST /orders takes an optional Idempotency-Key header: a repeat returns the first order
   - POST /orders is rate limited per client (X-Client-ID header, else client IP): 429 + Retry-After
   - the chaos settings are a resource: GET /chaos, PUT /chaos (replace), DELETE /chaos (reset)
+
+Assignment 3 (replicas behind Envoy): the process is one of three identical replicas
+(CANTEEN_REPLICA=A|B|C, app/replica.py runs this app and the gRPC server together). Every
+response carries X-Replica, every log line `replica`, and canteen_http_in_flight counts the
+requests being handled right now. The chaos settings moved to app/chaos.py so that the gRPC
+server of the same replica honours the A3 fixed delay too.
 """
 from __future__ import annotations
 
@@ -40,8 +46,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import metrics, store
-from app.logging_config import setup_logging
+from app import chaos, metrics, store
+from app.chaos import Chaos
+from app.logging_config import REPLICA, setup_logging
 from app.metrics import SHOPS   # fixed and small on purpose: it is a metric label (see metrics.py)
 from app.ratelimit import FixedWindowLimiter
 
@@ -58,14 +65,14 @@ async def lifespan(_app: FastAPI):
     store.init()
     metrics.bind_waiting_gauge(store.waiting_counts)
     log.info("startup", msg="canteen api started", shops=list(SHOPS), db=store.DB_PATH,
-             rate_limit=f"{RATE_LIMIT}/{RATE_WINDOW_S}s", demo_cardinality=metrics.DEMO_CARDINALITY)
+             rate_limit=f"{RATE_LIMIT}/{RATE_WINDOW_S}s", demo_cardinality=metrics.DEMO_CARDINALITY)   # `replica` is on every line
     yield
     log.info("shutdown", msg="canteen api stopped")
 
 
 app = FastAPI(
     title="canteen",
-    version="0.2.0",
+    version="0.3.0",
     description="Order queue for four university food shops. Every error has the shape "
                 "`{\"error\": {\"code\", \"message\", \"details\"}}`.",
     lifespan=lifespan,
@@ -103,13 +110,6 @@ class ErrorResponse(BaseModel):
     error: ErrorBody
 
 
-class Chaos(BaseModel):
-    """Faults for A1 Part E, toggled over HTTP so an experiment needs no restart."""
-    slow_every_n: int = Field(0, ge=0, description="delay every n-th /orders request (0 = off); the A1 brief's example is 5")
-    delay_ms: int = Field(500, ge=0, le=5000, description="how long the delayed requests sleep")
-    fail_shop: Shop | None = Field(None, description="this shop answers 503 'closed' to every new order")
-
-
 ERROR_CODES = {404: "not_found", 409: "conflict", 422: "validation_error", 429: "rate_limited", 503: "shop_closed", 500: "internal"}
 ERROR_DESCRIPTIONS = {404: "Unknown order", 409: "The order's current state does not allow this transition",
                       422: "Invalid input (unknown shop, item not 1-40 chars, malformed body)",
@@ -143,7 +143,6 @@ async def on_domain_error(_request: Request, exc: store.DomainError) -> JSONResp
 
 
 # --------------------------------------------------------------------------- middleware
-CHAOS = Chaos()
 REQUEST_COUNTER = 0
 
 
@@ -160,16 +159,23 @@ async def observe_http(request: Request, call_next):
     structlog.contextvars.bind_contextvars(request_id=request_id)
     if "x-request-id" in request.headers:              # E.2: only ids a client chose become label values;
         metrics.record_demo_request(request_id)        # generated ones (healthchecks, browsers) never do
+    is_scrape = request.url.path == "/metrics"
+    if not is_scrape:
+        metrics.HTTP_IN_FLIGHT.inc()               # A3: "active requests" on this replica
     start = time.perf_counter()
     global REQUEST_COUNTER
     REQUEST_COUNTER += 1
-    if CHAOS.slow_every_n and REQUEST_COUNTER % CHAOS.slow_every_n == 0 and request.url.path.startswith("/orders"):
-        await asyncio.sleep(CHAOS.delay_ms / 1000)     # the fault, inside the timed window
+    faults = chaos.get()
+    if faults.fixed_delay_ms and not is_scrape and request.url.path != "/health":
+        await asyncio.sleep(faults.fixed_delay_ms / 1000)   # A3 Part D: the slow replica (health checks stay fast on purpose)
+    if faults.slow_every_n and REQUEST_COUNTER % faults.slow_every_n == 0 and request.url.path.startswith("/orders"):
+        await asyncio.sleep(faults.delay_ms / 1000)     # the A1 fault, inside the timed window
     status = 500                                   # if call_next raises, that is what the client gets
     try:
         response: Response = await call_next(request)
         status = response.status_code
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Replica"] = REPLICA    # A3: which replica answered (Envoy logs it)
         return response
     except Exception as e:  # noqa: BLE001
         log.error("error", msg="unhandled exception", exc_type=type(e).__name__, exc_message=str(e)[:200], exc_info=True)
@@ -178,7 +184,8 @@ async def observe_http(request: Request, call_next):
         duration = time.perf_counter() - start
         route = request.scope.get("route")
         route = route.path if route is not None else "unmatched"
-        if route != "/metrics":                    # Prometheus' own scrapes would drown the request panels
+        if not is_scrape:                          # Prometheus' own scrapes would drown the request panels
+            metrics.HTTP_IN_FLIGHT.dec()
             metrics.HTTP_REQUESTS.labels(method=request.method, route=route, status=str(status)).inc()
             metrics.HTTP_DURATION.labels(method=request.method, route=route).observe(duration)
         if route not in ("/metrics", "/health"):   # ... and the healthcheck would fill Kibana with noise
@@ -225,7 +232,7 @@ def place_order(
     if not allowed:
         raise HTTPException(429, f"rate limit of {RATE_LIMIT} orders per {RATE_WINDOW_S} s exceeded for client {key!r}",
                             headers={"Retry-After": str(retry_after), "X-RateLimit-Limit": str(RATE_LIMIT), "X-RateLimit-Remaining": "0"})
-    if body.shop == CHAOS.fail_shop:
+    if body.shop == chaos.get().fail_shop:
         raise HTTPException(503, f"{body.shop} is closed")           # A1's second fault: a shop that is down
     order, replayed = store.place_order(body.shop, body.item, idempotency_key)
     if replayed:
@@ -278,23 +285,22 @@ def cancel(order_id: str) -> dict:
 
 
 # --------------------------------------------------------------------------- chaos (a resource: GET / PUT / DELETE)
-@app.get("/chaos", tags=["chaos"], response_model=Chaos, summary="Current fault settings")
+@app.get("/chaos", tags=["chaos"], response_model=Chaos, summary="Current fault settings of this replica")
 def chaos_status() -> dict:
-    return CHAOS.model_dump()
+    return chaos.get().model_dump()
 
 
-@app.put("/chaos", tags=["chaos"], response_model=Chaos, responses=errors(422), summary="Replace the fault settings")
+@app.put("/chaos", tags=["chaos"], response_model=Chaos, responses=errors(422), summary="Replace the fault settings of this replica")
 def chaos_set(body: Chaos) -> dict:
-    """Replace the whole settings object. `{"slow_every_n": 5, "delay_ms": 500}` is the A1 brief's example fault."""
-    global CHAOS
-    CHAOS = body
-    log.warning("chaos_changed", msg="chaos settings changed", **CHAOS.model_dump())
-    return CHAOS.model_dump()
+    """Replace the whole settings object. `{"slow_every_n": 5, "delay_ms": 500}` is the A1 brief's example fault;
+    `{"fixed_delay_ms": 200}` is A3's slow replica (HTTP and gRPC). Settings are per replica: call the replica directly, not Envoy."""
+    current = chaos.replace(body)
+    log.warning("chaos_changed", msg="chaos settings changed", **current.model_dump())
+    return current.model_dump()
 
 
-@app.delete("/chaos", status_code=204, tags=["chaos"], summary="Reset the fault settings to defaults")
+@app.delete("/chaos", status_code=204, tags=["chaos"], summary="Reset the fault settings of this replica to defaults")
 def chaos_reset() -> Response:
-    global CHAOS
-    CHAOS = Chaos()
-    log.warning("chaos_changed", msg="chaos reset", **CHAOS.model_dump())
+    current = chaos.reset()
+    log.warning("chaos_changed", msg="chaos reset", **current.model_dump())
     return Response(status_code=204)

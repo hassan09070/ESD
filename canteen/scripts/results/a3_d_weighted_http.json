@@ -1,0 +1,32 @@
+{
+ "label": "d_weighted",
+ "interface": "http",
+ "operation": "GET /shops",
+ "start": "2026-11-09T07:58:09Z",
+ "end": "2026-11-09T07:59:09Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 2400,
+ "failures": 0,
+ "by_outcome": {
+  "200": 2400
+ },
+ "by_replica": {
+  "A": 1199,
+  "B": 601,
+  "C": 600
+ },
+ "shares_pct": {
+  "A": 50.0,
+  "B": 25.0,
+  "C": 25.0
+ },
+ "p50_ms": 5.6,
+ "p95_ms": 9.6,
+ "max_ms": 66.5,
+ "p95_ok_ms": 9.6,
+ "timeout_s": 5.0
+}

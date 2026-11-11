@@ -1,17 +1,27 @@
 # Prometheus pulls ("scrapes") GET /metrics from each target every 5 s and stores every
 # sample in its own time-series database. 5 s means a 2-minute experiment stage holds
 # 24 samples per series. Retention is set on the command line in docker-compose.yml.
+#
+# A3: the three replicas are scraped DIRECTLY (compose DNS name of each container), never
+# through Envoy's balanced route, and each target gets a `replica` label that every one of its
+# series inherits; the dashboards group by it. Envoy's own stats come from its admin port.
 global:
   scrape_interval: 5s
 
 scrape_configs:
   - job_name: canteen            # becomes the `job` label on every series
     static_configs:
-      - targets: ["app:8000"]    # compose DNS name of the app container
+      - targets: ["app-a:8000"]  # one process per replica: HTTP metrics and gRPC metrics on the same /metrics
+        labels: {replica: "A"}
+      - targets: ["app-b:8000"]
+        labels: {replica: "B"}
+      - targets: ["app-c:8000"]
+        labels: {replica: "C"}
 
-  - job_name: grpc               # A2: the gRPC service's own /metrics (canteen_grpc_server_*)
+  - job_name: envoy              # A3: envoy_cluster_* (membership_healthy, upstream_rq, health_check_*), envoy_http_*
+    metrics_path: /stats/prometheus
     static_configs:
-      - targets: ["grpc:9095"]
+      - targets: ["envoy:9901"]
 
   - job_name: node               # Node Exporter: CPU, memory, disk, network of the machine
     static_configs:

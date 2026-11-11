@@ -1,0 +1,32 @@
+{
+ "label": "d_lr_slow",
+ "interface": "http",
+ "operation": "GET /shops",
+ "start": "2026-11-09T08:02:45Z",
+ "end": "2026-11-09T08:03:45Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 2400,
+ "failures": 0,
+ "by_outcome": {
+  "200": 2400
+ },
+ "by_replica": {
+  "A": 975,
+  "B": 347,
+  "C": 1078
+ },
+ "shares_pct": {
+  "A": 40.6,
+  "B": 14.5,
+  "C": 44.9
+ },
+ "p50_ms": 6.4,
+ "p95_ms": 208.2,
+ "max_ms": 236.7,
+ "p95_ok_ms": 208.2,
+ "timeout_s": 5.0
+}

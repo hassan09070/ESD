@@ -14,7 +14,13 @@ Observability (Part B/C) lives in one interceptor, the gRPC twin of main.py's mi
     canteen_grpc_server_in_flight{grpc_method}; exposed on GRPC_METRICS_PORT for Prometheus.
   - one `grpc_request` log line per call, like `http_request`.
 
-Run:  python -m grpc_service.server        (GRPC_PORT=50051, GRPC_METRICS_PORT=9095, CANTEEN_DB)
+Assignment 3: the server normally runs inside a replica process together with the HTTP API
+(app/replica.py), so its metrics are exposed by that process's GET /metrics. Each call's
+initial metadata carries `x-replica` (Envoy logs it), the standard grpc.health.v1 service is
+registered for Envoy's active health checks, and the replica's chaos `fixed_delay_ms`
+(app/chaos.py, set over PUT /chaos) delays every RPC.
+
+Run alone:  python -m grpc_service.server    (GRPC_PORT=50051, GRPC_METRICS_PORT=9095, CANTEEN_DB)
 """
 from __future__ import annotations
 
@@ -26,10 +32,11 @@ from concurrent import futures
 
 import grpc
 import structlog
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from prometheus_client import start_http_server
 
-from app import metrics, store
-from app.logging_config import setup_logging
+from app import chaos, metrics, store
+from app.logging_config import REPLICA, setup_logging
 from grpc_service import canteen_pb2, canteen_pb2_grpc
 
 setup_logging()
@@ -37,6 +44,13 @@ log = structlog.get_logger()
 
 GRPC_PORT = int(os.environ.get("GRPC_PORT", "50051"))
 METRICS_PORT = int(os.environ.get("GRPC_METRICS_PORT", "9095"))
+_HEALTH: health.HealthServicer | None = None
+
+
+def set_not_serving() -> None:
+    """Shutdown (app/replica.py): make Envoy's next grpc_health_check fail before the port closes."""
+    if _HEALTH is not None:
+        _HEALTH.enter_graceful_shutdown()
 
 
 class OrderService(canteen_pb2_grpc.OrderServiceServicer):
@@ -61,8 +75,8 @@ class Observe(grpc.ServerInterceptor):
 
     def intercept_service(self, continuation, handler_call_details):
         handler = continuation(handler_call_details)
-        if handler is None or handler.unary_unary is None:
-            return handler
+        if handler is None or handler.unary_unary is None or handler_call_details.method.startswith("/grpc.health."):
+            return handler                                                  # health checks are not application traffic
         method = handler_call_details.method.rsplit("/", 1)[-1]           # "PlaceOrder"
         incoming = dict(handler_call_details.invocation_metadata)
         request_id = (incoming.get("x-request-id") or uuid.uuid4().hex[:12])[:64]
@@ -71,10 +85,14 @@ class Observe(grpc.ServerInterceptor):
         def observed(request, context: grpc.ServicerContext):
             structlog.contextvars.clear_contextvars()
             structlog.contextvars.bind_contextvars(request_id=request_id)
+            context.send_initial_metadata((("x-replica", REPLICA),))        # A3: Envoy logs %RESP(x-replica)%
             context.set_trailing_metadata((("x-request-id", request_id),))
             metrics.GRPC_IN_FLIGHT.labels(grpc_method=method).inc()
             start = time.perf_counter()
             try:
+                delay_ms = chaos.get().fixed_delay_ms
+                if delay_ms:
+                    time.sleep(delay_ms / 1000)                             # A3 Part D: the slow replica, inside the timed window
                 return inner(request, context)
             except Exception as e:  # noqa: BLE001
                 if context.code() is None:                                  # not an abort(): an unexpected failure
@@ -102,11 +120,19 @@ def serve(port: int = GRPC_PORT, metrics_port: int | None = METRICS_PORT) -> tup
     metrics.bind_waiting_gauge(store.waiting_counts)
     if metrics_port:
         start_http_server(metrics_port)                       # GET /metrics for Prometheus
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=8), interceptors=[Observe()])
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=int(os.environ.get("GRPC_WORKERS", "32"))), interceptors=[Observe()])
     canteen_pb2_grpc.add_OrderServiceServicer_to_server(OrderService(), server)
+    # grpc.health.v1.Health/Check: what Envoy's grpc_health_check calls (A3 Part D). SERVING for
+    # the whole server ("") and for the one service by name.
+    global _HEALTH
+    health_servicer = health.HealthServicer(experimental_non_blocking=True, experimental_thread_pool=futures.ThreadPoolExecutor(max_workers=2))
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+    for name in ("", canteen_pb2.DESCRIPTOR.services_by_name["OrderService"].full_name):
+        health_servicer.set(name, health_pb2.HealthCheckResponse.SERVING)
+    _HEALTH = health_servicer
     bound = server.add_insecure_port(f"[::]:{port}")
     server.start()
-    log.info("startup", msg="canteen grpc started", grpc_port=bound, metrics_port=metrics_port, db=store.DB_PATH)
+    log.info("startup", msg="canteen grpc started", grpc_port=bound, metrics_port=metrics_port, db=store.DB_PATH, replica=REPLICA)
     return server, bound
 
 

@@ -1,0 +1,33 @@
+{
+ "label": "d_rr_slow",
+ "interface": "grpc",
+ "operation": "OrderService/PlaceOrder",
+ "start": "2026-11-09T08:01:32Z",
+ "end": "2026-11-09T08:02:33Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 2399,
+ "failures": 1,
+ "by_outcome": {
+  "OK": 2399,
+  "INTERNAL": 1
+ },
+ "by_replica": {
+  "A": 800,
+  "B": 800,
+  "C": 800
+ },
+ "shares_pct": {
+  "A": 33.3,
+  "B": 33.3,
+  "C": 33.3
+ },
+ "p50_ms": 7.3,
+ "p95_ms": 208.7,
+ "max_ms": 225.7,
+ "p95_ok_ms": 208.7,
+ "timeout_s": 5.0
+}

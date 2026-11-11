@@ -1,0 +1,32 @@
+{
+ "label": "d_weighted",
+ "interface": "grpc",
+ "operation": "OrderService/PlaceOrder",
+ "start": "2026-11-09T07:59:15Z",
+ "end": "2026-11-09T08:00:15Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 2400,
+ "failures": 0,
+ "by_outcome": {
+  "OK": 2400
+ },
+ "by_replica": {
+  "A": 1200,
+  "B": 600,
+  "C": 600
+ },
+ "shares_pct": {
+  "A": 50.0,
+  "B": 25.0,
+  "C": 25.0
+ },
+ "p50_ms": 5.2,
+ "p95_ms": 8.9,
+ "max_ms": 68.6,
+ "p95_ok_ms": 8.9,
+ "timeout_s": 5.0
+}

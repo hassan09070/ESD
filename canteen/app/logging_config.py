@@ -4,8 +4,8 @@ Why JSON on stdout and nothing else: Docker's json-file log driver captures stdo
 file per container; Filebeat tails that file and, because the line is already JSON, turns
 every key into a searchable field in Elasticsearch with no parsing rules of our own.
 
-Every line carries: ts (UTC, ISO-8601), level, service, event (machine name), msg (human
-sentence). Inside an HTTP request, `request_id` is bound as a context variable so every
+Every line carries: ts (UTC, ISO-8601), level, service, replica (A3: which replica wrote it),
+event (machine name), msg (human sentence). Inside an HTTP request, `request_id` is bound as a context variable so every
 line emitted while handling that request carries it without being passed around.
 
 What is never logged: anything a customer typed. `item` is free text and could hold a
@@ -14,16 +14,23 @@ name or a phone number, so order events log order_id and shop only.
 from __future__ import annotations
 
 import logging
+import os
+import socket
 import sys
 
 import structlog
 
 SERVICE = "canteen"
+# A3: which replica wrote the line. Set per container in docker-compose.yml (A, B, C); the
+# container's hostname otherwise. Also sent back to clients as the X-Replica header /
+# x-replica metadata, so Envoy's access log can record the replica it chose.
+REPLICA = os.environ.get("CANTEEN_REPLICA") or socket.gethostname()
 FORBIDDEN_KEYS = frozenset({"item", "authorization", "cookie", "token", "password"})
 
 
 def add_service(_logger, _method, event_dict: dict) -> dict:
     event_dict.setdefault("service", SERVICE)
+    event_dict.setdefault("replica", REPLICA)
     return event_dict
 
 

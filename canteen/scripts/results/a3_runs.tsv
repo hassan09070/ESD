@@ -1,0 +1,13 @@
+run	interface	mode	fault	start	end	rate	duration
+b_a_only	http	a_only	none	2026-11-09T07:53:34Z	2026-11-09T07:54:34Z	40	60
+b_a_only	grpc	a_only	none	2026-11-09T07:54:39Z	2026-11-09T07:55:40Z	40	60
+c_rr	http	round_robin	none	2026-11-09T07:55:51Z	2026-11-09T07:56:52Z	40	60
+c_rr	grpc	round_robin	none	2026-11-09T07:56:57Z	2026-11-09T07:57:57Z	40	60
+d_weighted	http	weighted	none	2026-11-09T07:58:09Z	2026-11-09T07:59:09Z	40	60
+d_weighted	grpc	weighted	none	2026-11-09T07:59:14Z	2026-11-09T08:00:15Z	40	60
+d_rr_slow	http	round_robin	B +200ms	2026-11-09T08:00:27Z	2026-11-09T08:01:27Z	40	60
+d_rr_slow	grpc	round_robin	B +200ms	2026-11-09T08:01:32Z	2026-11-09T08:02:33Z	40	60
+d_lr_slow	http	least_request	B +200ms	2026-11-09T08:02:45Z	2026-11-09T08:03:45Z	40	60
+d_lr_slow	grpc	least_request	B +200ms	2026-11-09T08:03:50Z	2026-11-09T08:04:51Z	40	60
+d_failure	http	round_robin	stop B @20s, start @40s	2026-11-09T08:05:03Z	2026-11-09T08:06:03Z	40	60
+d_failure	grpc	round_robin	stop B @20s, start @40s	2026-11-09T08:06:23Z	2026-11-09T08:07:23Z	40	60

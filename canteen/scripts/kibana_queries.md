@@ -1,7 +1,7 @@
 # Kibana queries (KQL) used in the report
 
 Data view: **canteen logs** (`canteen-logs-*`, time field `@timestamp`), created by `scripts/setup_elastic.sh`.
-Kibana → Discover → pick the data view → paste a query. Useful columns: `event`, `shop`, `order_id`, `request_id`, `status_code`, `duration_ms`, `msg`.
+Kibana → Discover → pick the data view → paste a query. Useful columns: `event`, `shop`, `order_id`, `request_id`, `status_code`, `duration_ms`, `msg`; since A3 also `service` (`canteen` = a replica, `envoy` = the proxy), `replica`, `listener`, `grpc_code`, `upstream_ms`, `response_flags`.
 
 | # | Purpose | KQL |
 |---|---------|-----|
@@ -16,6 +16,12 @@ Kibana → Discover → pick the data view → paste a query. Useful columns: `e
 | 9 | One shop's whole day | `shop : "tapal"` |
 | 10 | Chaos changes (what fault was active when) | `event : "chaos_changed"` |
 | 11 | App restarts | `event : "startup"` |
+| 12 | A3: one request end to end: Envoy's access-log event **and** the replica's event (same `request_id`; Envoy generated it, or kept the client's) | `request_id : "4574638028a0"` |
+| 13 | A3: everything Envoy sent to replica B (HTTP and gRPC) | `event : "envoy_access" and replica : "B"` |
+| 14 | A3: gRPC calls through Envoy and the code they ended with | `event : "envoy_access" and listener : "grpc"` |
+| 15 | A3: requests Envoy could not deliver (no healthy upstream, connection refused: response flags UH, UF, NR …) | `event : "envoy_access" and response_flags : * and not response_flags : "-"` |
+| 16 | A3: health-check state changes (`eject_unhealthy_event`, `add_healthy_event`) with the exact time | `health_checker_type : *` |
+| 17 | A3: one replica's own view of the same traffic | `service : "canteen" and replica : "B" and (event : "http_request" or event : "grpc_request")` |
 
 ## Shell equivalents (Lucene query_string on the same index)
 
@@ -34,4 +40,4 @@ count 'event:"http_request" AND status_code:>=500'
 curl -s "$ES/canteen-logs-*/_search?q=event:order_ready&size=1&pretty"
 ```
 
-`message` is the original line exactly as the app wrote it; every other field (`event`, `order_id`, `prep_s`, …) was extracted from it by Filebeat's `decode_json_fields`; `@timestamp` was copied from our `ts`; `container.name` was added by `add_docker_metadata`.
+`message` is the original line exactly as the app (or Envoy) wrote it; every other field (`event`, `order_id`, `prep_s`, …) was extracted from it by Filebeat's `decode_json_fields`; `@timestamp` was copied from our `ts` (Envoy health-check events: `timestamp`); `container.name` was added by `add_docker_metadata`. Envoy's access log uses the same field names as the replicas (`request_id`, `method`, `path`, `status_code`, `grpc_code`, `duration_ms`, `replica`) on purpose, so query 12 shows both events in the same columns.

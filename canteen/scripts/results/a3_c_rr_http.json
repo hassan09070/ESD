@@ -1,0 +1,32 @@
+{
+ "label": "c_rr",
+ "interface": "http",
+ "operation": "GET /shops",
+ "start": "2026-11-09T07:55:52Z",
+ "end": "2026-11-09T07:56:52Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 2400,
+ "failures": 0,
+ "by_outcome": {
+  "200": 2400
+ },
+ "by_replica": {
+  "A": 802,
+  "B": 798,
+  "C": 800
+ },
+ "shares_pct": {
+  "A": 33.4,
+  "B": 33.2,
+  "C": 33.3
+ },
+ "p50_ms": 5.6,
+ "p95_ms": 9.1,
+ "max_ms": 60.7,
+ "p95_ok_ms": 9.1,
+ "timeout_s": 5.0
+}

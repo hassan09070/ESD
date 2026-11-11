@@ -1,0 +1,62 @@
+============================== LOG EXAMPLES (c_rr)
+--- http: request_id : "d5ab05b01d85"  (2 events)
+{"authority": "[::1]:8000", "bytes_received": 0, "bytes_sent": 56, "duration_ms": 4, "event": "envoy_access", "grpc_code": null, "level": "info", "listener": "http", "method": "GET", "msg": "GET /shops -> 200 via B", "path": "/shops", "protocol": "HTTP/1.1", "replica": "B", "request_id": "d5ab05b01d85", "response_flags": "-", "service": "envoy", "status_code": 200, "ts": "2026-11-09T07:55:52.190Z", "upstream_cluster": "canteen_http", "upstream_host": "172.28.0.12:8000", "upstream_ms": "4"}
+{"duration_ms": 2, "event": "http_request", "level": "info", "method": "GET", "msg": "GET /shops -> 200", "path": "/shops", "replica": "B", "request_id": "d5ab05b01d85", "route": "/shops", "service": "canteen", "status_code": 200, "ts": "2026-11-09T07:55:52.194245Z"}
+--- grpc: request_id : "e21aef64748c"  (3 events)
+{"authority": "localhost:50051", "bytes_received": 23, "bytes_sent": 51, "duration_ms": 6, "event": "envoy_access", "grpc_code": "OK", "level": "info", "listener": "grpc", "method": "POST", "msg": "POST /canteen.v1.OrderService/PlaceOrder -> 200 via B", "path": "/canteen.v1.OrderService/PlaceOrder", "protocol": "HTTP/2", "replica": "B", "request_id": "e21aef64748c", "response_flags": "-", "service": "envoy", "status_code": 200, "ts": "2026-11-09T07:56:57.359Z", "upstream_cluster": "canteen_grpc", "upstream_host": "172.28.0.12:50051", "upstream_ms": "2"}
+{"event": "order_placed", "level": "info", "msg": "order placed at tapal", "order_id": "35e7f330", "queue_length": 2343, "replica": "B", "request_id": "e21aef64748c", "service": "canteen", "shop": "tapal", "ts": "2026-11-09T07:56:57.364604Z"}
+{"duration_ms": 3, "event": "grpc_request", "grpc_code": "OK", "grpc_method": "PlaceOrder", "level": "info", "msg": "PlaceOrder -> OK", "replica": "B", "request_id": "e21aef64748c", "service": "canteen", "ts": "2026-11-09T07:56:57.364990Z"}
+============================== FAILURE RUN: markers from the runner log
+   ==> [08:05:23Z] docker compose stop app-b
+   ==> [08:05:44Z] docker compose start app-b
+   ==> [08:06:43Z] docker compose stop app-b
+   ==> [08:07:04Z] docker compose start app-b
+============================== FAILURE RUN http: 2026-11-09T08:05:03Z -> 2026-11-09T08:06:03Z
+  HC 2026-11-09T08:05:27.533Z canteen_grpc  172.28.0.12  ['eject_unhealthy_event'] {"eject_unhealthy_event": {"failure_type": "NETWORK"}}
+  HC 2026-11-09T08:05:28.465Z canteen_http  172.28.0.12  ['eject_unhealthy_event'] {"eject_unhealthy_event": {"failure_type": "NETWORK_TIMEOUT"}}
+  HC 2026-11-09T08:05:47.020Z canteen_grpc  172.28.0.12  ['add_healthy_event'] {"add_healthy_event": {"first_check": false}}
+  HC 2026-11-09T08:05:47.489Z canteen_http  172.28.0.12  ['add_healthy_event'] {"add_healthy_event": {"first_check": false}}
+  status 200 flags -    n= 2293  replicas {A:913, C:911, B:469}
+  status 503 flags UF   n=   64  replicas {-:64}
+  t(s)   A    B    C   none(503)
+    -3   23   21   21      0
+     2   66   69   65      0
+     7   67   65   68      0
+    12   66   67   67      0
+    17   67   49   67     17
+    22   78    0   75     47
+    27   99    0  101      0
+    32  100    0  100      0
+    37  100    0  100      0
+    42   84   34   82      0
+    47   68   65   67      0
+    52   64   69   67      0
+    57   31   30   31      0
+============================== FAILURE RUN grpc: 2026-11-09T08:06:23Z -> 2026-11-09T08:07:23Z
+  HC 2026-11-09T08:06:47.692Z canteen_grpc  172.28.0.12  ['eject_unhealthy_event'] {"eject_unhealthy_event": {"failure_type": "NETWORK"}}
+  HC 2026-11-09T08:06:48.584Z canteen_http  172.28.0.12  ['eject_unhealthy_event'] {"eject_unhealthy_event": {"failure_type": "NETWORK_TIMEOUT"}}
+  HC 2026-11-09T08:07:07.038Z canteen_grpc  172.28.0.12  ['add_healthy_event'] {"add_healthy_event": {"first_check": false}}
+  HC 2026-11-09T08:07:07.609Z canteen_http  172.28.0.12  ['add_healthy_event'] {"add_healthy_event": {"first_check": false}}
+  status 200 flags -    n= 2299  replicas {C:914, A:912, B:473}
+  status 200 flags UF   n=   53  replicas {-:53}
+  t(s)   A    B    C   none(503)
+    -3   18   17   18      0
+     2   66   67   67      0
+     7   67   67   66      0
+    12   67   66   67      0
+    17   66   50   67     17
+    22   82    0   82     36
+    27  100    0  100      0
+    32  100    0  100      0
+    37  100    0  100      0
+    42   80   39   81      0
+    47   66   67   67      0
+    52   67   67   66      0
+    57   33   33   33      0
+============================== LEAST REQUEST vs RR: B's active requests (Prometheus, avg + max over window)
+  d_rr_slow  http A: avg 0.00 max 0  B: avg 2.92 max 5  C: avg 0.00 max 0
+  d_rr_slow  grpc A: avg 0.00 max 0  B: avg 2.67 max 3  C: avg 0.00 max 0
+  d_lr_slow  http A: avg 0.00 max 0  B: avg 0.92 max 2  C: avg 0.00 max 0
+  d_lr_slow  grpc A: avg 0.00 max 0  B: avg 1.23 max 3  C: avg 0.00 max 0
+  c_rr       http A: avg 0.00 max 0  B: avg 0.00 max 0  C: avg 0.08 max 1
+  c_rr       grpc A: avg 0.00 max 0  B: avg 0.00 max 0  C: avg 0.00 max 0

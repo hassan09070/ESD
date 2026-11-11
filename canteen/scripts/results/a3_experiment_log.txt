@@ -1,0 +1,202 @@
+A3 experiments: rate=40 req/s duration=60s delay_on_B=200ms runs: b_a_only c_rr d_weighted d_rr_slow d_lr_slow d_failure
+
+########## b_a_only (mode a_only, fault: none)
+==> envoy -> a_only
+mode: a_only
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+==> cancelled 2331 waiting load-test orders
+[07:53:34Z] http: 40 req/s for 60 s, open loop, timeout 5 s -> http://[::1]:8000
+== b_a_only/http: sent 2400 (40.0 req/s over 60.0 s) answered 2400 ok 2400 failed 0 | p50 6.2 ms p95 9.1 ms max 25.3 ms
+   outcomes {'200': 2400} | replicas {'A': 2400} -> shares {'A': 100.0}
+   window 2026-11-09T07:53:34Z -> 2026-11-09T07:54:34Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_b_a_only_http.json
+[07:54:39Z] grpc: 40 req/s for 60 s, open loop, timeout 5 s -> localhost:50051
+== b_a_only/grpc: sent 2400 (40.0 req/s over 60.1 s) answered 2400 ok 2399 failed 1 | p50 5.7 ms p95 8.3 ms max 113.1 ms
+   outcomes {'OK': 2399, 'INTERNAL': 1} | replicas {'A': 2400} -> shares {'A': 100.0}
+   window 2026-11-09T07:54:39Z -> 2026-11-09T07:55:40Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_b_a_only_grpc.json
+
+########## c_rr (mode round_robin, fault: none)
+==> envoy -> round_robin
+mode: round_robin
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+==> cancelled 2399 waiting load-test orders
+[07:55:52Z] http: 40 req/s for 60 s, open loop, timeout 5 s -> http://[::1]:8000
+== c_rr/http: sent 2400 (40.0 req/s over 60.0 s) answered 2400 ok 2400 failed 0 | p50 5.6 ms p95 9.1 ms max 60.7 ms
+   outcomes {'200': 2400} | replicas {'A': 802, 'B': 798, 'C': 800} -> shares {'A': 33.4, 'B': 33.2, 'C': 33.3}
+   window 2026-11-09T07:55:52Z -> 2026-11-09T07:56:52Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_c_rr_http.json
+[07:56:57Z] grpc: 40 req/s for 60 s, open loop, timeout 5 s -> localhost:50051
+== c_rr/grpc: sent 2400 (40.0 req/s over 60.1 s) answered 2400 ok 2400 failed 0 | p50 5.4 ms p95 9.1 ms max 103.0 ms
+   outcomes {'OK': 2400} | replicas {'A': 800, 'B': 800, 'C': 800} -> shares {'A': 33.3, 'B': 33.3, 'C': 33.3}
+   window 2026-11-09T07:56:57Z -> 2026-11-09T07:57:57Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_c_rr_grpc.json
+
+########## d_weighted (mode weighted, fault: none)
+==> envoy -> weighted
+mode: weighted
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+==> cancelled 2400 waiting load-test orders
+[07:58:09Z] http: 40 req/s for 60 s, open loop, timeout 5 s -> http://[::1]:8000
+== d_weighted/http: sent 2400 (40.0 req/s over 60.0 s) answered 2400 ok 2400 failed 0 | p50 5.6 ms p95 9.6 ms max 66.5 ms
+   outcomes {'200': 2400} | replicas {'A': 1199, 'B': 601, 'C': 600} -> shares {'A': 50.0, 'B': 25.0, 'C': 25.0}
+   window 2026-11-09T07:58:09Z -> 2026-11-09T07:59:09Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_weighted_http.json
+[07:59:15Z] grpc: 40 req/s for 60 s, open loop, timeout 5 s -> localhost:50051
+== d_weighted/grpc: sent 2400 (40.0 req/s over 60.1 s) answered 2400 ok 2400 failed 0 | p50 5.2 ms p95 8.9 ms max 68.6 ms
+   outcomes {'OK': 2400} | replicas {'A': 1200, 'B': 600, 'C': 600} -> shares {'A': 50.0, 'B': 25.0, 'C': 25.0}
+   window 2026-11-09T07:59:15Z -> 2026-11-09T08:00:15Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_weighted_grpc.json
+
+########## d_rr_slow (mode round_robin, fault: B +200ms)
+==> envoy -> round_robin
+mode: round_robin
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":200}
+==> cancelled 2400 waiting load-test orders
+[08:00:27Z] http: 40 req/s for 60 s, open loop, timeout 5 s -> http://[::1]:8000
+== d_rr_slow/http: sent 2400 (40.0 req/s over 60.1 s) answered 2400 ok 2400 failed 0 | p50 7.8 ms p95 209.4 ms max 242.0 ms
+   outcomes {'200': 2400} | replicas {'A': 800, 'B': 800, 'C': 800} -> shares {'A': 33.3, 'B': 33.3, 'C': 33.3}
+   window 2026-11-09T08:00:27Z -> 2026-11-09T08:01:27Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_rr_slow_http.json
+[08:01:32Z] grpc: 40 req/s for 60 s, open loop, timeout 5 s -> localhost:50051
+== d_rr_slow/grpc: sent 2400 (40.0 req/s over 60.3 s) answered 2400 ok 2399 failed 1 | p50 7.3 ms p95 208.7 ms max 225.7 ms
+   outcomes {'OK': 2399, 'INTERNAL': 1} | replicas {'A': 800, 'B': 800, 'C': 800} -> shares {'A': 33.3, 'B': 33.3, 'C': 33.3}
+   window 2026-11-09T08:01:32Z -> 2026-11-09T08:02:33Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_rr_slow_grpc.json
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+
+########## d_lr_slow (mode least_request, fault: B +200ms)
+==> envoy -> least_request
+mode: least_request
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":200}
+==> cancelled 2399 waiting load-test orders
+[08:02:45Z] http: 40 req/s for 60 s, open loop, timeout 5 s -> http://[::1]:8000
+== d_lr_slow/http: sent 2400 (40.0 req/s over 60.1 s) answered 2400 ok 2400 failed 0 | p50 6.4 ms p95 208.2 ms max 236.7 ms
+   outcomes {'200': 2400} | replicas {'A': 975, 'B': 347, 'C': 1078} -> shares {'A': 40.6, 'B': 14.5, 'C': 44.9}
+   window 2026-11-09T08:02:45Z -> 2026-11-09T08:03:45Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_lr_slow_http.json
+[08:03:50Z] grpc: 40 req/s for 60 s, open loop, timeout 5 s -> localhost:50051
+== d_lr_slow/grpc: sent 2400 (40.0 req/s over 60.2 s) answered 2400 ok 2400 failed 0 | p50 6.4 ms p95 207.7 ms max 586.0 ms
+   outcomes {'OK': 2400} | replicas {'A': 1027, 'B': 364, 'C': 1009} -> shares {'A': 42.8, 'B': 15.2, 'C': 42.0}
+   window 2026-11-09T08:03:50Z -> 2026-11-09T08:04:51Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_lr_slow_grpc.json
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+
+########## d_failure (mode round_robin, fault: stop B at 20s, start B at 40s)
+==> envoy -> round_robin
+mode: round_robin
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+==> cancelled 2400 waiting load-test orders
+[08:05:03Z] http: 40 req/s for 60 s, open loop, timeout 5 s -> http://[::1]:8000
+==> [08:05:23Z] docker compose stop app-b
+ Container canteen-app-b  Stopping
+ Container canteen-app-b  Stopped
+==> [08:05:23Z] B exited (FinishedAt 08:05:23.763Z, exit code 0)
+==> [08:05:44Z] docker compose start app-b
+ Container canteen-app-b  Starting
+ Container canteen-app-b  Started
+==> [08:05:44Z] B started (StartedAt 08:05:44.274Z)
+== d_failure/http: sent 2400 (40.0 req/s over 60.0 s) answered 2400 ok 2336 failed 64 | p50 5.7 ms p95 12.4 ms max 1011.1 ms
+   outcomes {'200': 2336, '503': 64} | replicas {'?': 64, 'A': 929, 'B': 483, 'C': 924} -> shares {'?': 2.7, 'A': 38.7, 'B': 20.1, 'C': 38.5}
+   window 2026-11-09T08:05:03Z -> 2026-11-09T08:06:03Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_failure_http.json
+==> waiting for B to be healthy in Envoy again
+mode: round_robin
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+==> envoy -> round_robin
+mode: round_robin
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+==> cancelled 0 waiting load-test orders
+[08:06:23Z] grpc: 40 req/s for 60 s, open loop, timeout 5 s -> localhost:50051
+==> [08:06:43Z] docker compose stop app-b
+ Container canteen-app-b  Stopping
+ Container canteen-app-b  Stopped
+==> [08:06:44Z] B exited (FinishedAt 08:06:43.965Z, exit code 0)
+==> [08:07:04Z] docker compose start app-b
+ Container canteen-app-b  Starting
+ Container canteen-app-b  Started
+==> [08:07:04Z] B started (StartedAt 08:07:04.457Z)
+== d_failure/grpc: sent 2400 (40.0 req/s over 60.1 s) answered 2400 ok 2347 failed 53 | p50 5.5 ms p95 10.1 ms max 1004.7 ms
+   outcomes {'OK': 2347, 'UNAVAILABLE': 53} | replicas {'-': 53, 'A': 928, 'B': 489, 'C': 930} -> shares {'-': 2.2, 'A': 38.7, 'B': 20.4, 'C': 38.8}
+   window 2026-11-09T08:06:23Z -> 2026-11-09T08:07:23Z
+   wrote /Users/hassan/ESD/canteen/scripts/results/a3_d_failure_grpc.json
+==> waiting for B to be healthy in Envoy again
+mode: round_robin
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+
+==> restoring the healthy round-robin setup
+==> envoy -> round_robin
+mode: round_robin
+  canteen_http   172.28.0.11:8000   healthy
+  canteen_http   172.28.0.12:8000   healthy
+  canteen_http   172.28.0.13:8000   healthy
+  canteen_grpc   172.28.0.11:50051  healthy
+  canteen_grpc   172.28.0.12:50051  healthy
+  canteen_grpc   172.28.0.13:50051  healthy
+==> chaos on B: {"slow_every_n":0,"delay_ms":500,"fail_shop":null,"fixed_delay_ms":0}
+
+=== windows (UTC) ===
+run         interface  mode           fault                    start                 end                   rate  duration
+b_a_only    http       a_only         none                     2026-11-09T07:53:34Z  2026-11-09T07:54:34Z  40    60
+b_a_only    grpc       a_only         none                     2026-11-09T07:54:39Z  2026-11-09T07:55:40Z  40    60
+c_rr        http       round_robin    none                     2026-11-09T07:55:51Z  2026-11-09T07:56:52Z  40    60
+c_rr        grpc       round_robin    none                     2026-11-09T07:56:57Z  2026-11-09T07:57:57Z  40    60
+d_weighted  http       weighted       none                     2026-11-09T07:58:09Z  2026-11-09T07:59:09Z  40    60
+d_weighted  grpc       weighted       none                     2026-11-09T07:59:14Z  2026-11-09T08:00:15Z  40    60
+d_rr_slow   http       round_robin    B +200ms                 2026-11-09T08:00:27Z  2026-11-09T08:01:27Z  40    60
+d_rr_slow   grpc       round_robin    B +200ms                 2026-11-09T08:01:32Z  2026-11-09T08:02:33Z  40    60
+d_lr_slow   http       least_request  B +200ms                 2026-11-09T08:02:45Z  2026-11-09T08:03:45Z  40    60
+d_lr_slow   grpc       least_request  B +200ms                 2026-11-09T08:03:50Z  2026-11-09T08:04:51Z  40    60
+d_failure   http       round_robin    stop B @20s, start @40s  2026-11-09T08:05:03Z  2026-11-09T08:06:03Z  40    60
+d_failure   grpc       round_robin    stop B @20s, start @40s  2026-11-09T08:06:23Z  2026-11-09T08:07:23Z  40    60
+
+next: python3 scripts/lb_summary.py        # the results table from Prometheus + Elasticsearch
+exit=0

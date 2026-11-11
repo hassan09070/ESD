@@ -1,0 +1,37 @@
+{
+ "label": "d_failure",
+ "interface": "grpc",
+ "operation": "OrderService/PlaceOrder",
+ "start": "2026-11-09T06:55:21Z",
+ "end": "2026-11-09T06:56:21Z",
+ "target_rate": 40.0,
+ "duration_s": 60.0,
+ "actual_rate": 40.0,
+ "sent": 2400,
+ "answered": 2400,
+ "successes": 1816,
+ "failures": 584,
+ "by_outcome": {
+  "OK": 1816,
+  "DEADLINE_EXCEEDED": 479,
+  "CANCELLED": 50,
+  "UNAVAILABLE": 55
+ },
+ "by_replica": {
+  "-": 521,
+  "A": 793,
+  "B": 295,
+  "C": 791
+ },
+ "shares_pct": {
+  "-": 21.7,
+  "A": 33.0,
+  "B": 12.3,
+  "C": 33.0
+ },
+ "p50_ms": 54.7,
+ "p95_ms": 5036.5,
+ "max_ms": 5134.3,
+ "p95_ok_ms": 3211.9,
+ "timeout_s": 5.0
+}

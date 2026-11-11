@@ -6,7 +6,7 @@ bind_waiting_gauge), so both processes report the same true value.
 
 Naming follows the Prometheus conventions: a `canteen_` prefix, base units in the name
 (`_seconds`), `_total` on counters. Labels are bounded: `shop` (4 values), `route` (templates),
-`status`/`grpc_code` (status codes), `grpc_method` (RPC names), `api` (http|grpc). A label whose
+`status`/`grpc_code` (status codes), `grpc_method` (RPC names), `api` (http|grpc), `replica` (A|B|C). A label whose
 values can grow without limit (order id, customer, request id) would create a new time series
 per value - the "cardinality explosion" of A1 Part E.2, demonstrated on purpose by
 `canteen_demo_requests_total`.
@@ -49,6 +49,13 @@ IDEMPOTENT_REPLAYS = Counter("canteen_idempotent_replays_total", "Place-order re
 HTTP_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5)
 HTTP_REQUESTS = Counter("canteen_http_requests_total", "HTTP requests handled, by method, route template and status code", ["method", "route", "status"])
 HTTP_DURATION = Histogram("canteen_http_request_duration_seconds", "HTTP request latency, by method and route template", ["method", "route"], buckets=HTTP_BUCKETS)
+# A3 Part B: "active requests" per replica. The gRPC twin is GRPC_IN_FLIGHT below.
+HTTP_IN_FLIGHT = Gauge("canteen_http_in_flight", "HTTP requests currently being handled (excluding /metrics)")
+
+# A3 Part A: which replica this process is. The value is the label; the series is always 1.
+# Prometheus also attaches replica=A|B|C to every series of a target (prometheus.yml), which is
+# what the dashboards group by; this metric exists so the identity is visible in /metrics itself.
+REPLICA_INFO = Gauge("canteen_replica_info", "Replica identity of this process (always 1)", ["replica"])
 
 # ---------------------------------------------------------------- application metrics: gRPC (A2 Part C)
 # Measured at the server, inside the interceptor, from request arrival to response/abort.
@@ -74,6 +81,8 @@ def record_demo_request(request_id: str) -> None:
 
 # Pre-create the series that panels divide or compare, so a shop/method with no events yet
 # shows 0 (and rate() = 0) instead of "no data" in Grafana.
+REPLICA_INFO.labels(replica=os.environ.get("CANTEEN_REPLICA") or os.uname().nodename).set(1)
+HTTP_IN_FLIGHT.set(0)
 for _shop in SHOPS:
     ORDERS_PLACED.labels(shop=_shop)
     ORDERS_CANCELLED.labels(shop=_shop)
